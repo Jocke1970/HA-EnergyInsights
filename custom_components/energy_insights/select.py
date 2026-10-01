@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.util import dt as dt_util
 
 from .const import PERIOD_SELECT_UNIQUE_ID
 
@@ -50,7 +51,7 @@ class EnergyInsightsPeriodSelect(SelectEntity, RestoreEntity):
 
     def __init__(self) -> None:
         """Initialize the period selector."""
-        now = datetime.now().astimezone()
+        now = dt_util.now()
         self._attr_options = _period_options(now)
         self._attr_current_option = f"{now.year}-{now.month:02d}"
 
