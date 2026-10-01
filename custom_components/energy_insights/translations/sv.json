@@ -1,0 +1,15 @@
+{
+  "title": "Energy Insights",
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Endast en Energy Insights-instans kan konfigureras."
+    }
+  },
+  "entity": {
+    "select": {
+      "period": {
+        "name": "Period"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "domain": "energy_insights",
+  "name": "Energy Insights",
+  "codeowners": [
+    "@Jocke1970"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "recorder"
+  ],
+  "documentation": "https://github.com/Jocke1970/HA-EnergyInsights",
+  "integration_type": "helper",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Jocke1970/HA-EnergyInsights/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0-dev.1"
+}
