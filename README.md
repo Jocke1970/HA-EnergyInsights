@@ -2,64 +2,59 @@
 
 Home Assistant integration and dashboard card for advanced electricity usage, cost and historical energy insights.
 
-> **Development status:** early development on the `dev` branch.
+> **Development status:** active development on the `dev` branch.
 
 ## Goal
 
-Energy Insights is being built to replace Home Assistant YAML packages used for electricity statistics with a Python backend and a dedicated dashboard card.
-
-The first target is feature parity with the proven YAML implementation:
-
-- selectable month and year periods
-- energy consumption per period
-- gross and net electricity cost
-- weighted average price per kWh
-- average consumption per day
-- highest and lowest consumption day
-- peak power and timestamp
-- monthly archive / historical comparisons
-- dedicated JavaScript dashboard card
-
-## Repository layout
-
-```text
-custom_components/
-└── energy_insights/
-    ├── __init__.py
-    ├── config_flow.py
-    ├── const.py
-    ├── manifest.json
-    ├── select.py
-    └── translations/
-        ├── en.json
-        └── sv.json
-```
+Energy Insights replaces YAML packages used for electricity statistics with a Python backend and a dedicated dashboard card.
 
 ## Branch and release workflow
 
 - `dev` — active development
-- beta releases — tagged prereleases such as `v0.1.0-beta.1`
+- `beta` — beta / release candidate branch
 - `main` — stable code only
+- beta releases — tagged prereleases such as `v0.1.0-beta.1`
 - stable releases — tagged releases such as `v0.1.0`
 
-## Current development milestone
+## Current milestone — 0.1.0-dev.2
 
-The initial scaffold provides:
+The Python backend now includes:
 
-- UI config flow
-- one config entry only
-- `select.energy_insights_period`
-- current-year months
-- current year
-- previous year
-- previous-year months
-- restored period selection after restart
+- UI config flow for selecting source entities
+- dynamic month/year period selector
+- Recorder long-term statistics queries
+- selected-period energy consumption
+- gross and net electricity cost
+- weighted average gross/net price per kWh
+- average consumption per day
+- highest and lowest consumption day
+- peak power with Recorder bucket timestamp
+- optional live utility-meter sources for the current month
+- 15-minute coordinator refresh
 
-The statistics backend and custom JavaScript card are the next milestones.
+### Reference values
+
+Development is being verified against an existing YAML implementation. September 2026 reference values are:
+
+- 530.09 kWh
+- 760.73 SEK gross cost
+- 515.09 SEK net cost
+- 1.435 SEK/kWh gross average
+- 0.972 SEK/kWh net average
+- 42.95 kWh highest day
+- 4.84 kW peak power
+
+## Next milestone
+
+1. Install the `dev` branch in Home Assistant.
+2. Compare Python results with the YAML reference entities.
+3. Add the monthly archive backend.
+4. Build `energy-insights-card.js`.
+5. Promote the first verified build to `beta` as `v0.1.0-beta.1`.
 
 ## HACS
 
-The repository is structured as a Home Assistant custom integration. HACS packaging/release metadata will be finalized before the first beta release.
+The repository is public and intended to be HACS compatible. Release packaging will be finalized before the first beta release.
 
 ## License
 

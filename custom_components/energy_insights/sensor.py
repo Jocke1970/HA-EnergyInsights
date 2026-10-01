@@ -1,0 +1,68 @@
+"""Sensor platform for Energy Insights."""
+
+from __future__ import annotations
+
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+from homeassistant.const import UnitOfEnergy
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from . import EnergyInsightsConfigEntry
+from .const import STATISTICS_SENSOR_UNIQUE_ID
+from .coordinator import EnergyInsightsCoordinator
+
+
+async def async_setup_entry(
+    hass,
+    entry: EnergyInsightsConfigEntry,
+    async_add_entities,
+) -> None:
+    """Set up Energy Insights sensor entities."""
+    async_add_entities([EnergyInsightsStatisticsSensor(entry.runtime_data)])
+
+
+class EnergyInsightsStatisticsSensor(
+    CoordinatorEntity[EnergyInsightsCoordinator], SensorEntity
+):
+    """Expose calculated statistics for the selected period."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "statistics"
+    _attr_icon = "mdi:chart-box-outline"
+    _attr_unique_id = STATISTICS_SENSOR_UNIQUE_ID
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: EnergyInsightsCoordinator) -> None:
+        """Initialize the statistics sensor."""
+        super().__init__(coordinator)
+
+    @property
+    def native_value(self) -> float:
+        """Return energy for the selected period."""
+        return self.coordinator.data.energy_kwh
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Return statistics used by the dashboard card."""
+        data = self.coordinator.data
+        return {
+            "period": data.period,
+            "period_start": data.period_start.isoformat(),
+            "period_end": data.period_end.isoformat(),
+            "cost_gross_sek": data.cost_gross,
+            "cost_net_sek": data.cost_net,
+            "average_price_gross_sek_kwh": data.average_price_gross,
+            "average_price_net_sek_kwh": data.average_price_net,
+            "average_kwh_per_day": data.average_kwh_per_day,
+            "highest_day_kwh": data.highest_day_kwh,
+            "highest_day_date": data.highest_day_date,
+            "lowest_day_kwh": data.lowest_day_kwh,
+            "lowest_day_date": data.lowest_day_date,
+            "peak_power_kw": data.peak_power_kw,
+            "peak_power_time": data.peak_power_time,
+        }

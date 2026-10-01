@@ -1,6 +1,30 @@
 {
   "title": "Energy Insights",
   "config": {
+    "step": {
+      "user": {
+        "title": "Konfigurera Energy Insights",
+        "description": "Välj Home Assistant-sensorerna som ska användas för elstatistiken. De tre sensorerna för innevarande månad är valfria men ger livevärden i stället för Recorders timbaserade statistik.",
+        "data": {
+          "energy_total": "Kumulativ energi",
+          "power": "Momentan effekt",
+          "cost_gross_total": "Kumulativ bruttokostnad",
+          "cost_net_total": "Kumulativ nettokostnad",
+          "current_month_energy": "Energi innevarande månad",
+          "current_month_cost_gross": "Bruttokostnad innevarande månad",
+          "current_month_cost_net": "Nettokostnad innevarande månad"
+        },
+        "data_description": {
+          "energy_total": "Kumulativ energisensor som normalt även används av Energy Dashboard, vanligtvis i kWh.",
+          "power": "Sensor för aktuell effekt, vanligtvis i W eller kW.",
+          "cost_gross_total": "Valfri kumulativ sensor för elkostnad brutto.",
+          "cost_net_total": "Valfri kumulativ sensor för elkostnad netto.",
+          "current_month_energy": "Valfri live-sensor för månadens energi, exempelvis en monthly utility meter.",
+          "current_month_cost_gross": "Valfri live-sensor för månadens bruttokostnad.",
+          "current_month_cost_net": "Valfri live-sensor för månadens nettokostnad."
+        }
+      }
+    },
     "abort": {
       "single_instance_allowed": "Endast en Energy Insights-instans kan konfigureras."
     }
@@ -9,6 +33,11 @@
     "select": {
       "period": {
         "name": "Period"
+      }
+    },
+    "sensor": {
+      "statistics": {
+        "name": "Statistik"
       }
     }
   }
