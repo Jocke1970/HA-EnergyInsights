@@ -21,8 +21,10 @@ from .const import (
     CONF_CURRENT_MONTH_COST_NET,
     CONF_CURRENT_MONTH_ENERGY,
     CONF_ENERGY_TOTAL,
+    CONF_HISTORY_START,
     CONF_POWER,
     CONF_SELECTED_PERIOD,
+    DEFAULT_HISTORY_START,
     DOMAIN,
     UPDATE_INTERVAL,
 )
@@ -62,25 +64,39 @@ class EnergyInsightsData:
     net_cost_month_rows: int
 
 
-def period_options(now: datetime) -> list[str]:
-    """Return available month/year period keys, newest first."""
-    current_year = now.year
-    previous_year = current_year - 1
-
-    options = [
-        f"{current_year}-{month:02d}"
-        for month in range(now.month, 0, -1)
-    ]
-    options.append(str(current_year))
-    options.append(str(previous_year))
-    options.extend(
-        f"{previous_year}-{month:02d}"
-        for month in range(12, 0, -1)
+def _history_start(value: str) -> datetime:
+    """Return the configured history start, normalized to month start."""
+    parsed = datetime.fromisoformat(value)
+    return datetime(
+        parsed.year,
+        parsed.month,
+        1,
+        tzinfo=dt_util.DEFAULT_TIME_ZONE,
     )
+
+
+def period_options(now: datetime, history_start: datetime) -> list[str]:
+    """Return period keys from history start through the current month."""
+    options: list[str] = []
+
+    for year in range(now.year, history_start.year - 1, -1):
+        highest_month = now.month if year == now.year else 12
+        lowest_month = history_start.month if year == history_start.year else 1
+
+        options.extend(
+            f"{year}-{month:02d}"
+            for month in range(highest_month, lowest_month - 1, -1)
+        )
+        options.append(str(year))
+
     return options
 
 
-def _period_bounds(period: str, now: datetime) -> tuple[datetime, datetime]:
+def _period_bounds(
+    period: str,
+    now: datetime,
+    history_start: datetime,
+) -> tuple[datetime, datetime]:
     """Return UTC bounds for a month or year period."""
     tz = dt_util.DEFAULT_TIME_ZONE
 
@@ -98,7 +114,10 @@ def _period_bounds(period: str, now: datetime) -> tuple[datetime, datetime]:
             end_local = datetime(year, month + 1, 1, tzinfo=tz)
     else:
         year = int(period)
-        start_local = datetime(year, 1, 1, tzinfo=tz)
+        if year == history_start.year:
+            start_local = history_start
+        else:
+            start_local = datetime(year, 1, 1, tzinfo=tz)
         end_local = now if year == now.year else datetime(year + 1, 1, 1, tzinfo=tz)
 
     return dt_util.as_utc(start_local), dt_util.as_utc(end_local)
@@ -201,10 +220,14 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
         """Initialize the coordinator."""
         self.config_entry = entry
         now = dt_util.now()
+        self.history_start = _history_start(
+            entry.data.get(CONF_HISTORY_START, DEFAULT_HISTORY_START)
+        )
         default_period = f"{now.year}-{now.month:02d}"
         saved_period = entry.options.get(CONF_SELECTED_PERIOD, default_period)
+        available_periods = period_options(now, self.history_start)
         self.selected_period = (
-            saved_period if saved_period in period_options(now) else default_period
+            saved_period if saved_period in available_periods else default_period
         )
 
         super().__init__(
@@ -218,7 +241,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
     @property
     def options(self) -> list[str]:
         """Return the selectable periods."""
-        return period_options(dt_util.now())
+        return period_options(dt_util.now(), self.history_start)
 
     async def async_set_period(self, period: str) -> None:
         """Persist and load a new selected period."""
@@ -272,7 +295,11 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
     async def _async_update_data(self) -> EnergyInsightsData:
         """Fetch and calculate statistics for the selected period."""
         now = dt_util.now()
-        start, end = _period_bounds(self.selected_period, now)
+        start, end = _period_bounds(
+            self.selected_period,
+            now,
+            self.history_start,
+        )
         start_ts = start.timestamp()
         end_ts = end.timestamp()
 
