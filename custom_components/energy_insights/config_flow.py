@@ -17,6 +17,7 @@ from .const import (
     CONF_CURRENT_MONTH_COST_GROSS,
     CONF_CURRENT_MONTH_COST_NET,
     CONF_CURRENT_MONTH_ENERGY,
+    DEFAULT_HISTORY_START,
     CONF_ENERGY_TOTAL,
     CONF_HISTORY_START,
     CONF_POWER,
@@ -54,7 +55,9 @@ def _schema() -> probatio.Schema:
             ),
             probatio.Optional(CONF_CURRENT_MONTH_COST_GROSS): _sensor_selector(),
             probatio.Optional(CONF_CURRENT_MONTH_COST_NET): _sensor_selector(),
-            probatio.Required(CONF_HISTORY_START): selector.DateSelector(),
+            probatio.Required(
+                CONF_HISTORY_START, default=DEFAULT_HISTORY_START
+            ): selector.DateSelector(),
         }
     )
 
