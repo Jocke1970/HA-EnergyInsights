@@ -12,7 +12,8 @@
           "cost_net_total": "Kumulativ nettokostnad",
           "current_month_energy": "Energi innevarande månad",
           "current_month_cost_gross": "Bruttokostnad innevarande månad",
-          "current_month_cost_net": "Nettokostnad innevarande månad"
+          "current_month_cost_net": "Nettokostnad innevarande månad",
+          "history_start": "Historik startar"
         },
         "data_description": {
           "energy_total": "Kumulativ energisensor som normalt även används av Energy Dashboard, vanligtvis i kWh.",
@@ -21,7 +22,8 @@
           "cost_net_total": "Valfri kumulativ sensor för elkostnad netto.",
           "current_month_energy": "Valfri live-sensor för månadens energi, exempelvis en monthly utility meter.",
           "current_month_cost_gross": "Valfri live-sensor för månadens bruttokostnad.",
-          "current_month_cost_net": "Valfri live-sensor för månadens nettokostnad."
+          "current_month_cost_net": "Valfri live-sensor för månadens nettokostnad.",
+          "history_start": "Första månad som ska visas i periodväljaren."
         }
       },
       "reconfigure": {
@@ -34,7 +36,8 @@
           "cost_net_total": "Kumulativ nettokostnad",
           "current_month_energy": "Energi innevarande månad",
           "current_month_cost_gross": "Bruttokostnad innevarande månad",
-          "current_month_cost_net": "Nettokostnad innevarande månad"
+          "current_month_cost_net": "Nettokostnad innevarande månad",
+          "history_start": "Historik startar"
         }
       }
     },
