@@ -6,6 +6,7 @@ from typing import Any, override
 
 import probatio
 
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import Platform
 from homeassistant.helpers import selector
@@ -23,10 +24,36 @@ from .const import (
 )
 
 
-def _sensor_selector() -> selector.EntitySelector:
+def _sensor_selector(
+    device_class: SensorDeviceClass | None = None,
+) -> selector.EntitySelector:
     """Return a single sensor entity selector."""
     return selector.EntitySelector(
-        selector.EntitySelectorConfig(domain=Platform.SENSOR)
+        selector.EntitySelectorConfig(
+            domain=Platform.SENSOR,
+            device_class=device_class,
+        )
+    )
+
+
+def _schema() -> probatio.Schema:
+    """Return the Energy Insights source schema."""
+    return probatio.Schema(
+        {
+            probatio.Required(CONF_ENERGY_TOTAL): _sensor_selector(
+                SensorDeviceClass.ENERGY
+            ),
+            probatio.Required(CONF_POWER): _sensor_selector(
+                SensorDeviceClass.POWER
+            ),
+            probatio.Optional(CONF_COST_GROSS_TOTAL): _sensor_selector(),
+            probatio.Optional(CONF_COST_NET_TOTAL): _sensor_selector(),
+            probatio.Optional(CONF_CURRENT_MONTH_ENERGY): _sensor_selector(
+                SensorDeviceClass.ENERGY
+            ),
+            probatio.Optional(CONF_CURRENT_MONTH_COST_GROSS): _sensor_selector(),
+            probatio.Optional(CONF_CURRENT_MONTH_COST_NET): _sensor_selector(),
+        }
     )
 
 
@@ -46,16 +73,24 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(title=NAME, data=user_input)
 
-        schema = probatio.Schema(
-            {
-                probatio.Required(CONF_ENERGY_TOTAL): _sensor_selector(),
-                probatio.Required(CONF_POWER): _sensor_selector(),
-                probatio.Optional(CONF_COST_GROSS_TOTAL): _sensor_selector(),
-                probatio.Optional(CONF_COST_NET_TOTAL): _sensor_selector(),
-                probatio.Optional(CONF_CURRENT_MONTH_ENERGY): _sensor_selector(),
-                probatio.Optional(CONF_CURRENT_MONTH_COST_GROSS): _sensor_selector(),
-                probatio.Optional(CONF_CURRENT_MONTH_COST_NET): _sensor_selector(),
-            }
-        )
+        return self.async_show_form(step_id="user", data_schema=_schema())
 
-        return self.async_show_form(step_id="user", data_schema=schema)
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Reconfigure Energy Insights source entities."""
+        entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            return self.async_update_reload_and_abort(
+                entry,
+                data_updates=user_input,
+            )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                _schema(),
+                dict(entry.data),
+            ),
+        )
