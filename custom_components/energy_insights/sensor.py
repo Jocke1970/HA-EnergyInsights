@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorStateClass,
-)
+from typing import override
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import UnitOfEnergy
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -35,11 +33,16 @@ class EnergyInsightsStatisticsSensor(
     _attr_unique_id = STATISTICS_SENSOR_UNIQUE_ID
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: EnergyInsightsCoordinator) -> None:
         """Initialize the statistics sensor."""
         super().__init__(coordinator)
+
+    @property
+    @override
+    def suggested_object_id(self) -> str:
+        """Return a stable entity object id independent of UI language."""
+        return "energy_insights_statistics"
 
     @property
     def native_value(self) -> float | None:
@@ -54,12 +57,12 @@ class EnergyInsightsStatisticsSensor(
         data = self.coordinator.data
         if data is None:
             return {
-                "backend_version": "0.1.0-dev.3",
+                "backend_version": "0.1.0-dev.4",
                 "recorder_status": "waiting",
             }
 
         return {
-            "backend_version": "0.1.0-dev.3",
+            "backend_version": "0.1.0-dev.4",
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),

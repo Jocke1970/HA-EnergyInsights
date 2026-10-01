@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import override
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -32,6 +34,12 @@ class EnergyInsightsPeriodSelect(
     def __init__(self, coordinator: EnergyInsightsCoordinator) -> None:
         """Initialize the period selector."""
         super().__init__(coordinator)
+
+    @property
+    @override
+    def suggested_object_id(self) -> str:
+        """Return a stable entity object id independent of UI language."""
+        return "energy_insights_period"
 
     @property
     def options(self) -> list[str]:
