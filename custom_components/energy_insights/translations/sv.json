@@ -23,10 +23,24 @@
           "current_month_cost_gross": "Valfri live-sensor för månadens bruttokostnad.",
           "current_month_cost_net": "Valfri live-sensor för månadens nettokostnad."
         }
+      },
+      "reconfigure": {
+        "title": "Konfigurera om Energy Insights",
+        "description": "Ändra vilka källsensorer Energy Insights använder.",
+        "data": {
+          "energy_total": "Kumulativ energi",
+          "power": "Momentan effekt",
+          "cost_gross_total": "Kumulativ bruttokostnad",
+          "cost_net_total": "Kumulativ nettokostnad",
+          "current_month_energy": "Energi innevarande månad",
+          "current_month_cost_gross": "Bruttokostnad innevarande månad",
+          "current_month_cost_net": "Nettokostnad innevarande månad"
+        }
       }
     },
     "abort": {
-      "single_instance_allowed": "Endast en Energy Insights-instans kan konfigureras."
+      "single_instance_allowed": "Endast en Energy Insights-instans kan konfigureras.",
+      "reconfigure_successful": "Energy Insights har konfigurerats om."
     }
   },
   "entity": {
