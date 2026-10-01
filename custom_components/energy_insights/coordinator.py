@@ -182,9 +182,10 @@ def _peak_power(
         return None, None
 
     normalized = peak_value
-    if unit == "W":
+    normalized_unit = str(unit or "").strip().lower()
+    if normalized_unit == "w":
         normalized /= 1000
-    elif unit == "MW":
+    elif normalized_unit == "mw":
         normalized *= 1000
 
     local_start = dt_util.as_local(dt_util.utc_from_timestamp(peak_start))
