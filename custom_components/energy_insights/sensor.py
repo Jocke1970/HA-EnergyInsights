@@ -42,15 +42,24 @@ class EnergyInsightsStatisticsSensor(
         super().__init__(coordinator)
 
     @property
-    def native_value(self) -> float:
+    def native_value(self) -> float | None:
         """Return energy for the selected period."""
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.energy_kwh
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
         """Return statistics used by the dashboard card."""
         data = self.coordinator.data
+        if data is None:
+            return {
+                "backend_version": "0.1.0-dev.3",
+                "recorder_status": "waiting",
+            }
+
         return {
+            "backend_version": "0.1.0-dev.3",
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),
@@ -65,4 +74,6 @@ class EnergyInsightsStatisticsSensor(
             "lowest_day_date": data.lowest_day_date,
             "peak_power_kw": data.peak_power_kw,
             "peak_power_time": data.peak_power_time,
+            "recorder_status": data.recorder_status,
+            "recorder_error": data.recorder_error,
         }

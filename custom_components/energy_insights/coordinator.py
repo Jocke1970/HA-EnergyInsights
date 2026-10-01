@@ -49,6 +49,8 @@ class EnergyInsightsData:
     lowest_day_date: str | None
     peak_power_kw: float | None
     peak_power_time: str | None
+    recorder_status: str
+    recorder_error: str | None
 
 
 def period_options(now: datetime) -> list[str]:
@@ -275,6 +277,8 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             if entity_id
         }
 
+        recorder_status = "ok"
+        recorder_error: str | None = None
         try:
             month_stats = await self._statistics(
                 month_stat_ids,
@@ -297,8 +301,16 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 "hour",
                 {"max"},
             )
-        except (RuntimeError, TypeError, ValueError) as err:
-            raise UpdateFailed(f"Unable to read Recorder statistics: {err}") from err
+        except Exception as err:  # noqa: BLE001
+            # Recorder history is valuable, but a statistics-query problem
+            # must not prevent the integration from loading. Current-month
+            # live utility-meter values can still be exposed.
+            recorder_status = "error"
+            recorder_error = f"{type(err).__name__}: {err}"
+            _LOGGER.exception("Unable to read Recorder statistics")
+            month_stats = {}
+            day_stats = {}
+            power_stats = {}
 
         is_current_month = self.selected_period == now.strftime("%Y-%m")
 
@@ -404,4 +416,6 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 round(peak_power, 2) if peak_power is not None else None
             ),
             peak_power_time=peak_time,
+            recorder_status=recorder_status,
+            recorder_error=recorder_error,
         )

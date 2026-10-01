@@ -18,7 +18,10 @@ async def async_setup_entry(
 ) -> bool:
     """Set up Energy Insights from a config entry."""
     coordinator = EnergyInsightsCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
+    # Do not block entity creation on the first Recorder query. A failed
+    # initial refresh leaves coordinator entities unavailable/diagnostic,
+    # instead of preventing the integration from creating entities at all.
+    await coordinator.async_refresh()
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
