@@ -1,20 +1,34 @@
 # HA-EnergyInsights
 
-Home Assistant integration and dashboard card for advanced electricity usage, cost and historical energy insights.
+Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current beta:** `0.1.0-beta.1` on the `beta` branch.
+> **Current beta:** `0.1.0-beta.1`
 
-## Goal
+## Installation
 
-Energy Insights replaces YAML packages used for electricity statistics with a Python backend and a dedicated dashboard card.
+### Beta — HACS
+
+Beta builds are distributed **only through HACS**.
+
+1. Add `Jocke1970/HA-EnergyInsights` as a custom **Integration** repository in HACS if it is not already present.
+2. Enable **Show beta versions** for Energy Insights in HACS.
+3. Install or update to the latest `0.1.0-beta.x` prerelease.
+4. Restart Home Assistant.
+5. Add **Energy Insights** under **Settings → Devices & services**.
+
+Manual beta installation scripts are intentionally not shipped on the `beta` branch.
+
+### Development
+
+The `dev` branch is for active development and direct runtime testing. It is not the HACS beta distribution channel.
 
 ## Branch and release workflow
 
 - `dev` — active development
-- `beta` — beta / release candidate
-- `main` — stable code only
-- beta releases — tagged prereleases such as `v0.1.0-beta.1`
-- stable releases — tagged releases such as `v0.1.0`
+- `beta` — HACS beta / release candidate
+- `main` — stable
+- beta releases — GitHub prereleases such as `v0.1.0-beta.1`
+- stable releases — GitHub releases such as `v0.1.0`
 
 ## 0.1.0-beta.1
 
@@ -23,7 +37,7 @@ The first beta includes:
 - UI config flow and reconfiguration
 - device-class filtering for energy and power sources
 - configurable history start
-- dynamic month/year period selector
+- period selector limited to available history
 - Recorder long-term statistics queries
 - selected-period energy consumption
 - gross and net electricity cost
@@ -37,7 +51,7 @@ The first beta includes:
 
 ### Verified September 2026 reference
 
-The Python backend matches the proven YAML implementation:
+The Python backend matches the previous YAML implementation:
 
 - 530.09 kWh
 - 760.73 SEK gross cost
@@ -48,16 +62,6 @@ The Python backend matches the proven YAML implementation:
 - 42.95 kWh highest day
 - 7.66 kWh lowest day
 - 4.84 kW peak power
-
-## Install beta for testing
-
-From a Home Assistant terminal:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/Jocke1970/HA-EnergyInsights/beta/scripts/install_beta.sh | sh
-```
-
-Restart Home Assistant after installation.
 
 ## Reference configuration for the original test system
 
@@ -74,7 +78,7 @@ Restart Home Assistant after installation.
 
 ## Next milestone
 
-- beta runtime verification
+- beta runtime verification through HACS
 - monthly archive backend
 - `energy-insights-card.js`
 - entity-id migration/cleanup

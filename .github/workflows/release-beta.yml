@@ -1,0 +1,53 @@
+name: Release beta
+
+on:
+  push:
+    branches:
+      - beta
+    paths:
+      - "custom_components/energy_insights/manifest.json"
+      - ".github/workflows/release-beta.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-beta:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(python -c 'import json; print(json.load(open("custom_components/energy_insights/manifest.json"))["version"])')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify beta version
+        shell: bash
+        run: |
+          case "${{ steps.version.outputs.version }}" in
+            *-beta.*) ;;
+            *)
+              echo "Manifest version is not a beta version."
+              exit 1
+              ;;
+          esac
+
+      - name: Create prerelease if missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+            exit 0
+          fi
+
+          gh release create "$TAG"             --target "$GITHUB_SHA"             --prerelease             --title "$TAG"             --notes "Energy Insights beta release $TAG. Install through HACS with beta versions enabled."
