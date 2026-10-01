@@ -28,6 +28,5 @@ jobs:
         run: |
           python -m json.tool hacs.json >/dev/null
           python -m json.tool custom_components/energy_insights/manifest.json >/dev/null
-          python -m json.tool custom_components/energy_insights/strings.json >/dev/null
           python -m json.tool custom_components/energy_insights/translations/en.json >/dev/null
           python -m json.tool custom_components/energy_insights/translations/sv.json >/dev/null
