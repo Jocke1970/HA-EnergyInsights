@@ -51,6 +51,15 @@ class EnergyInsightsData:
     peak_power_time: str | None
     recorder_status: str
     recorder_error: str | None
+    source_energy_total: str
+    source_power: str
+    source_cost_gross_total: str | None
+    source_cost_net_total: str | None
+    energy_month_rows: int
+    energy_day_rows: int
+    power_hour_rows: int
+    gross_cost_month_rows: int
+    net_cost_month_rows: int
 
 
 def period_options(now: datetime) -> list[str]:
@@ -418,4 +427,21 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             peak_power_time=peak_time,
             recorder_status=recorder_status,
             recorder_error=recorder_error,
+            source_energy_total=energy_id,
+            source_power=power_id,
+            source_cost_gross_total=gross_total_id,
+            source_cost_net_total=net_total_id,
+            energy_month_rows=len(month_stats.get(energy_id, [])),
+            energy_day_rows=len(day_stats.get(energy_id, [])),
+            power_hour_rows=len(power_stats.get(power_id, [])),
+            gross_cost_month_rows=(
+                len(month_stats.get(gross_total_id, []))
+                if gross_total_id
+                else 0
+            ),
+            net_cost_month_rows=(
+                len(month_stats.get(net_total_id, []))
+                if net_total_id
+                else 0
+            ),
         )

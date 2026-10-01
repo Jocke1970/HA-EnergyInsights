@@ -57,12 +57,12 @@ class EnergyInsightsStatisticsSensor(
         data = self.coordinator.data
         if data is None:
             return {
-                "backend_version": "0.1.0-dev.4",
+                "backend_version": "0.1.0-dev.6",
                 "recorder_status": "waiting",
             }
 
         return {
-            "backend_version": "0.1.0-dev.4",
+            "backend_version": "0.1.0-dev.6",
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),
@@ -79,4 +79,13 @@ class EnergyInsightsStatisticsSensor(
             "peak_power_time": data.peak_power_time,
             "recorder_status": data.recorder_status,
             "recorder_error": data.recorder_error,
+            "source_energy_total": data.source_energy_total,
+            "source_power": data.source_power,
+            "source_cost_gross_total": data.source_cost_gross_total,
+            "source_cost_net_total": data.source_cost_net_total,
+            "energy_month_rows": data.energy_month_rows,
+            "energy_day_rows": data.energy_day_rows,
+            "power_hour_rows": data.power_hour_rows,
+            "gross_cost_month_rows": data.gross_cost_month_rows,
+            "net_cost_month_rows": data.net_cost_month_rows,
         }
