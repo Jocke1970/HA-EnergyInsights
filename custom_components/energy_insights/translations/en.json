@@ -23,10 +23,24 @@
           "current_month_cost_gross": "Optional live monthly gross cost sensor.",
           "current_month_cost_net": "Optional live monthly net cost sensor."
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Energy Insights",
+        "description": "Change the source sensors used by Energy Insights.",
+        "data": {
+          "energy_total": "Cumulative energy",
+          "power": "Current power",
+          "cost_gross_total": "Cumulative gross cost",
+          "cost_net_total": "Cumulative net cost",
+          "current_month_energy": "Current month energy",
+          "current_month_cost_gross": "Current month gross cost",
+          "current_month_cost_net": "Current month net cost"
+        }
       }
     },
     "abort": {
-      "single_instance_allowed": "Only one Energy Insights instance can be configured."
+      "single_instance_allowed": "Only one Energy Insights instance can be configured.",
+      "reconfigure_successful": "Energy Insights was reconfigured successfully."
     }
   },
   "entity": {
