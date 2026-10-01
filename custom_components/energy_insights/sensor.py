@@ -6,10 +6,11 @@ from typing import override
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import UnitOfEnergy
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import EnergyInsightsConfigEntry
-from .const import STATISTICS_SENSOR_UNIQUE_ID
+from .const import DOMAIN, NAME, STATISTICS_SENSOR_UNIQUE_ID, VERSION
 from .coordinator import EnergyInsightsCoordinator
 
 
@@ -37,6 +38,13 @@ class EnergyInsightsStatisticsSensor(
     def __init__(self, coordinator: EnergyInsightsCoordinator) -> None:
         """Initialize the statistics sensor."""
         super().__init__(coordinator)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
+            name=NAME,
+            manufacturer="Jocke1970",
+            model="Energy Insights",
+            sw_version=VERSION,
+        )
 
     @property
     @override
@@ -57,12 +65,12 @@ class EnergyInsightsStatisticsSensor(
         data = self.coordinator.data
         if data is None:
             return {
-                "backend_version": "0.1.0-dev.6",
+                "backend_version": "0.1.0-dev.7",
                 "recorder_status": "waiting",
             }
 
         return {
-            "backend_version": "0.1.0-dev.6",
+            "backend_version": "0.1.0-dev.7",
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),
