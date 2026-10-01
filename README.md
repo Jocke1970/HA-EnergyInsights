@@ -16,9 +16,11 @@ Energy Insights replaces YAML packages used for electricity statistics with a Py
 - beta releases — tagged prereleases such as `v0.1.0-beta.1`
 - stable releases — tagged releases such as `v0.1.0`
 
-## Current milestone — 0.1.0-dev.2
+## Current milestone — 0.1.0-dev.5
 
 The Python backend now includes:
+
+- standard **Add integration** setup flow (`integration_type: service`)
 
 - UI config flow for selecting source entities
 - dynamic month/year period selector
