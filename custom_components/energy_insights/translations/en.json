@@ -12,7 +12,8 @@
           "cost_net_total": "Cumulative net cost",
           "current_month_energy": "Current month energy",
           "current_month_cost_gross": "Current month gross cost",
-          "current_month_cost_net": "Current month net cost"
+          "current_month_cost_net": "Current month net cost",
+          "history_start": "History starts"
         },
         "data_description": {
           "energy_total": "A cumulative energy sensor used by the Energy dashboard, normally in kWh.",
@@ -21,7 +22,8 @@
           "cost_net_total": "Optional cumulative net electricity cost sensor.",
           "current_month_energy": "Optional live monthly energy sensor, for example a monthly utility meter.",
           "current_month_cost_gross": "Optional live monthly gross cost sensor.",
-          "current_month_cost_net": "Optional live monthly net cost sensor."
+          "current_month_cost_net": "Optional live monthly net cost sensor.",
+          "history_start": "First month to include in the period selector."
         }
       },
       "reconfigure": {
@@ -34,7 +36,8 @@
           "cost_net_total": "Cumulative net cost",
           "current_month_energy": "Current month energy",
           "current_month_cost_gross": "Current month gross cost",
-          "current_month_cost_net": "Current month net cost"
+          "current_month_cost_net": "Current month net cost",
+          "history_start": "History starts"
         }
       }
     },
