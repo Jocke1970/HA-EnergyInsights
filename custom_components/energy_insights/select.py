@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import override
 
 from homeassistant.components.select import SelectEntity
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import EnergyInsightsConfigEntry
-from .const import PERIOD_SELECT_UNIQUE_ID
+from .const import DOMAIN, NAME, PERIOD_SELECT_UNIQUE_ID, VERSION
 from .coordinator import EnergyInsightsCoordinator
 
 
@@ -34,6 +35,13 @@ class EnergyInsightsPeriodSelect(
     def __init__(self, coordinator: EnergyInsightsCoordinator) -> None:
         """Initialize the period selector."""
         super().__init__(coordinator)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
+            name=NAME,
+            manufacturer="Jocke1970",
+            model="Energy Insights",
+            sw_version=VERSION,
+        )
 
     @property
     @override
