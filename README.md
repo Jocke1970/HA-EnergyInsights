@@ -5,6 +5,18 @@ Home Assistant integration for advanced electricity usage, cost and historical e
 > **Stable status:** no stable release has been published yet.  
 > **Current HACS beta:** **2026-10 / v0.1.0-beta.5**
 
+## Versioning from next beta
+
+The current `0.1.0-beta.5` release is the final legacy-version beta.
+
+Starting with the next beta, Energy Insights uses calendar-based PEP 440 versions:
+
+- first beta: `2026.10.0b1`
+- subsequent betas: `2026.10.0b2`, `2026.10.0b3`, …
+- stable release: `2026.10.0`
+
+Git tags use the same version prefixed with `v`, for example `v2026.10.0b1`.
+
 ## Branch purpose
 
 `main` is reserved for stable code. The active release candidate is developed through:
