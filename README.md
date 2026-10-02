@@ -2,75 +2,46 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current beta:** `0.1.0-beta.5` — release name **2026-10**
+> **Current HACS beta:** **2026-10 / v0.1.0-beta.5**
 
-## Installation
+## Installation — HACS beta
 
-### Beta — HACS
+Beta builds are distributed only through HACS.
 
-Beta builds are distributed **only through HACS**.
-
-1. Add `Jocke1970/HA-EnergyInsights` as a custom **Integration** repository in HACS if it is not already present.
-2. Enable **Show beta versions** for Energy Insights in HACS.
-3. Install or update to the latest `0.1.0-beta.x` prerelease.
+1. Add `Jocke1970/HA-EnergyInsights` as a custom **Integration** repository if needed.
+2. Enable **Show beta versions** for Energy Insights.
+3. Install/update to `v0.1.0-beta.5`.
 4. Restart Home Assistant.
-5. Add **Energy Insights** under **Settings → Devices & services**.
+5. Add or reconfigure **Energy Insights** under **Settings → Devices & services**.
 
-Manual beta installation scripts are intentionally not shipped on the `beta` branch.
+No manual beta installer is shipped on the `beta` branch.
 
-### Development
+## 2026-10
 
-The `dev` branch is for active development and direct runtime testing. It is not the HACS beta distribution channel.
-
-## Branch and release workflow
-
-- `dev` — active development
-- `beta` — HACS beta / release candidate
-- `main` — stable
-- beta releases — GitHub prereleases such as `v0.1.0-beta.1`
-- stable releases — GitHub releases such as `v0.1.0`
-
-## 2026-10 (`0.1.0-beta.5`)
-
-The first beta includes:
+The current beta includes:
 
 - UI config flow and reconfiguration
-- device-class filtering for energy and power sources
+- energy/power source filtering
+- live-state entity picker for the Nord Pool price source
 - configurable history start
-- period selector limited to available history
-- Recorder long-term statistics queries
-- selected-period energy consumption
-- gross and net electricity cost
-- weighted average gross/net price per kWh
-- average consumption per day
-- highest and lowest consumption day
+- period selector limited to configured history
+- Recorder-backed period energy and cost statistics
+- weighted gross/net price
+- average daily usage and high/low consumption day
 - peak power normalized to kW
-- optional live utility-meter sources for the current month
-- 15-minute coordinator refresh
+- optional live current-month utility-meter values
+- Nord Pool net price records for current month and year/history start
+- Recorder hourly `mean` statistics for Nord Pool measurement sensors
+- 15-minute refresh
 - Swedish and English translations
-- Recorder-backed Nord Pool net price records for current month and current year/history start
-- Nord Pool price records calculated from Recorder hourly mean statistics
 
-### Verified September 2026 reference
-
-The Python backend matches the previous YAML implementation:
-
-- 530.09 kWh
-- 760.73 SEK gross cost
-- 515.09 SEK net cost
-- 1.435 SEK/kWh gross average
-- 0.972 SEK/kWh net average
-- 17.67 kWh/day
-- 42.95 kWh highest day
-- 7.66 kWh lowest day
-- 4.84 kW peak power
-
-## Reference configuration for the original test system
+## Reference configuration
 
 | Field | Entity |
 |---|---|
 | Cumulative energy | `sensor.develco_zhemi101_summering_av_leverans` |
 | Current power | `sensor.develco_zhemi101_momentan_efterfragan` |
+| Nord Pool net price | `sensor.nordpool_kwh_se3_sek_2_10_025` |
 | Cumulative gross cost | `sensor.elkostnad_total_brutto` |
 | Cumulative net cost | `sensor.elkostnad_total_netto` |
 | Current month energy | `sensor.hushallsel_denna_manad` |
@@ -78,13 +49,11 @@ The Python backend matches the previous YAML implementation:
 | Current month net cost | `sensor.elkostnad_denna_manad_netto` |
 | History start | `2026-09-01` |
 
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the migration map and verified September reference.
+
 ## Next milestone
 
-- beta runtime verification through HACS
-- monthly archive backend
-- `energy-insights-card.js`
-- entity-id migration/cleanup
-- promotion to `main` as `v0.1.0`
+Verify month/year Nord Pool records in beta, migrate the Lovelace card to Energy Insights, then move monthly archive persistence into Python.
 
 ## License
 
