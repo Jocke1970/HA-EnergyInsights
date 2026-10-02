@@ -1,4 +1,5 @@
 name: Cleanup old beta
+# one-shot cleanup
 
 on:
   push:
