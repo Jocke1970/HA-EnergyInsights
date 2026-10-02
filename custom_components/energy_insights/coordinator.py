@@ -23,6 +23,7 @@ from .const import (
     CONF_ENERGY_TOTAL,
     CONF_HISTORY_START,
     CONF_POWER,
+    CONF_PRICE_NET,
     CONF_SELECTED_PERIOD,
     DEFAULT_HISTORY_START,
     DOMAIN,
@@ -51,15 +52,25 @@ class EnergyInsightsData:
     lowest_day_date: str | None
     peak_power_kw: float | None
     peak_power_time: str | None
+    price_low_month: float | None
+    price_low_month_time: str | None
+    price_high_month: float | None
+    price_high_month_time: str | None
+    price_low_year: float | None
+    price_low_year_time: str | None
+    price_high_year: float | None
+    price_high_year_time: str | None
     recorder_status: str
     recorder_error: str | None
     source_energy_total: str
     source_power: str
+    source_price_net: str | None
     source_cost_gross_total: str | None
     source_cost_net_total: str | None
     energy_month_rows: int
     energy_day_rows: int
     power_hour_rows: int
+    price_hour_rows: int
     gross_cost_month_rows: int
     net_cost_month_rows: int
 
@@ -211,6 +222,54 @@ def _peak_power(
     return normalized, local_start.strftime("%Y-%m-%d %H:%M")
 
 
+
+def _price_extremes(
+    result: dict[str, list[dict[str, Any]]],
+    statistic_id: str | None,
+    start_ts: float,
+    end_ts: float,
+) -> tuple[float | None, str | None, float | None, str | None]:
+    """Return lowest/highest hourly price and Recorder bucket times."""
+    if not statistic_id:
+        return None, None, None, None
+
+    low_value: float | None = None
+    low_start: float | None = None
+    high_value: float | None = None
+    high_start: float | None = None
+
+    for row in result.get(statistic_id, []):
+        row_start = float(row.get("start", 0))
+        if not (start_ts <= row_start < end_ts):
+            continue
+
+        row_min = row.get("min")
+        if row_min is not None:
+            numeric_min = float(row_min)
+            if low_value is None or numeric_min < low_value:
+                low_value = numeric_min
+                low_start = row_start
+
+        row_max = row.get("max")
+        if row_max is not None:
+            numeric_max = float(row_max)
+            if high_value is None or numeric_max > high_value:
+                high_value = numeric_max
+                high_start = row_start
+
+    low_time = None
+    if low_start is not None:
+        low_local = dt_util.as_local(dt_util.utc_from_timestamp(low_start))
+        low_time = low_local.strftime("%Y-%m-%d %H:%M")
+
+    high_time = None
+    if high_start is not None:
+        high_local = dt_util.as_local(dt_util.utc_from_timestamp(high_start))
+        high_time = high_local.strftime("%Y-%m-%d %H:%M")
+
+    return low_value, low_time, high_value, high_time
+
+
 class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
     """Coordinate Energy Insights statistics."""
 
@@ -305,6 +364,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
 
         energy_id = self.config_entry.data[CONF_ENERGY_TOTAL]
         power_id = self.config_entry.data[CONF_POWER]
+        price_id = self.config_entry.data.get(CONF_PRICE_NET)
         gross_total_id = self.config_entry.data.get(CONF_COST_GROSS_TOTAL)
         net_total_id = self.config_entry.data.get(CONF_COST_NET_TOTAL)
 
@@ -313,6 +373,13 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             for entity_id in (energy_id, gross_total_id, net_total_id)
             if entity_id
         }
+
+        tz = dt_util.DEFAULT_TIME_ZONE
+        month_start_local = datetime(now.year, now.month, 1, tzinfo=tz)
+        year_start_local = datetime(now.year, 1, 1, tzinfo=tz)
+        if self.history_start.year == now.year and self.history_start > year_start_local:
+            year_start_local = self.history_start
+        price_start = dt_util.as_utc(year_start_local)
 
         recorder_status = "ok"
         recorder_error: str | None = None
@@ -338,6 +405,17 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 "hour",
                 {"max"},
             )
+            price_stats = (
+                await self._statistics(
+                    {price_id},
+                    price_start,
+                    dt_util.as_utc(now),
+                    "hour",
+                    {"min", "max"},
+                )
+                if price_id
+                else {}
+            )
         except Exception as err:  # noqa: BLE001
             # Recorder history is valuable, but a statistics-query problem
             # must not prevent the integration from loading. Current-month
@@ -348,6 +426,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             month_stats = {}
             day_stats = {}
             power_stats = {}
+            price_stats = {}
 
         is_current_month = self.selected_period == now.strftime("%Y-%m")
 
@@ -414,6 +493,30 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             power_unit,
         )
 
+        (
+            price_low_month,
+            price_low_month_time,
+            price_high_month,
+            price_high_month_time,
+        ) = _price_extremes(
+            price_stats,
+            price_id,
+            dt_util.as_utc(month_start_local).timestamp(),
+            dt_util.as_utc(now).timestamp(),
+        )
+
+        (
+            price_low_year,
+            price_low_year_time,
+            price_high_year,
+            price_high_year_time,
+        ) = _price_extremes(
+            price_stats,
+            price_id,
+            price_start.timestamp(),
+            dt_util.as_utc(now).timestamp(),
+        )
+
         average_price_gross = (
             cost_gross / energy if cost_gross is not None and energy > 0 else None
         )
@@ -453,15 +556,35 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 round(peak_power, 2) if peak_power is not None else None
             ),
             peak_power_time=peak_time,
+            price_low_month=(
+                round(price_low_month, 3) if price_low_month is not None else None
+            ),
+            price_low_month_time=price_low_month_time,
+            price_high_month=(
+                round(price_high_month, 3) if price_high_month is not None else None
+            ),
+            price_high_month_time=price_high_month_time,
+            price_low_year=(
+                round(price_low_year, 3) if price_low_year is not None else None
+            ),
+            price_low_year_time=price_low_year_time,
+            price_high_year=(
+                round(price_high_year, 3) if price_high_year is not None else None
+            ),
+            price_high_year_time=price_high_year_time,
             recorder_status=recorder_status,
             recorder_error=recorder_error,
             source_energy_total=energy_id,
             source_power=power_id,
+            source_price_net=price_id,
             source_cost_gross_total=gross_total_id,
             source_cost_net_total=net_total_id,
             energy_month_rows=len(month_stats.get(energy_id, [])),
             energy_day_rows=len(day_stats.get(energy_id, [])),
             power_hour_rows=len(power_stats.get(power_id, [])),
+            price_hour_rows=(
+                len(price_stats.get(price_id, [])) if price_id else 0
+            ),
             gross_cost_month_rows=(
                 len(month_stats.get(gross_total_id, []))
                 if gross_total_id
