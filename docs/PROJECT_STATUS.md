@@ -2,6 +2,18 @@
 
 Last updated: 2026-10-02
 
+## Versioning
+
+The current HACS beta `v0.1.0-beta.5` is the final legacy-version beta.
+
+From the next beta onward, use calendar-based PEP 440 versions:
+
+- `2026.10.0b1`, `2026.10.0b2`, … for October 2026 betas
+- `2026.10.0` for the corresponding stable release
+- future months follow the same `YYYY.MM.PATCHbN` / `YYYY.MM.PATCH` pattern
+
+Git tags are prefixed with `v`, for example `v2026.10.0b1`.
+
 ## Release model
 
 - `dev` — active development and direct runtime testing
