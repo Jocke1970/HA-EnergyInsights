@@ -21,6 +21,7 @@ from .const import (
     CONF_ENERGY_TOTAL,
     CONF_HISTORY_START,
     CONF_POWER,
+    CONF_PRICE_NET,
     DOMAIN,
     NAME,
 )
@@ -48,6 +49,7 @@ def _schema() -> probatio.Schema:
             probatio.Required(CONF_POWER): _sensor_selector(
                 SensorDeviceClass.POWER
             ),
+            probatio.Optional(CONF_PRICE_NET): _sensor_selector(),
             probatio.Optional(CONF_COST_GROSS_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_COST_NET_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_CURRENT_MONTH_ENERGY): _sensor_selector(
