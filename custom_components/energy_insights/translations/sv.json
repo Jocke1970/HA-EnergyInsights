@@ -25,7 +25,7 @@
           "current_month_cost_gross": "Valfri live-sensor för månadens bruttokostnad.",
           "current_month_cost_net": "Valfri live-sensor för månadens nettokostnad.",
           "history_start": "Första månad som ska visas i periodväljaren.",
-          "price_net": "Valfri pris-sensor för elpris exklusive skatt och moms. Används för månads- och årsrekord."
+          "price_net": "Valfritt entity-id för elpris exklusive skatt och moms, t.ex. sensor.nordpool_kwh_se3_sek_2_10_025. Används för månads- och årsrekord."
         }
       },
       "reconfigure": {
@@ -47,6 +47,9 @@
     "abort": {
       "single_instance_allowed": "Endast en Energy Insights-instans kan konfigureras.",
       "reconfigure_successful": "Energy Insights har konfigurerats om."
+    },
+    "error": {
+      "entity_not_found": "Entiteten finns inte i Home Assistant."
     }
   },
   "entity": {
