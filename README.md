@@ -2,7 +2,7 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current beta:** `0.1.0-beta.2` — release name **2026-10**
+> **Current beta:** `0.1.0-beta.5` — release name **2026-10**
 
 ## Installation
 
@@ -30,7 +30,7 @@ The `dev` branch is for active development and direct runtime testing. It is not
 - beta releases — GitHub prereleases such as `v0.1.0-beta.1`
 - stable releases — GitHub releases such as `v0.1.0`
 
-## 2026-10 (`0.1.0-beta.2`)
+## 2026-10 (`0.1.0-beta.5`)
 
 The first beta includes:
 
@@ -49,6 +49,7 @@ The first beta includes:
 - 15-minute coordinator refresh
 - Swedish and English translations
 - Recorder-backed Nord Pool net price records for current month and current year/history start
+- Nord Pool price records calculated from Recorder hourly mean statistics
 
 ### Verified September 2026 reference
 
