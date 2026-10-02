@@ -65,12 +65,12 @@ class EnergyInsightsStatisticsSensor(
         data = self.coordinator.data
         if data is None:
             return {
-                "backend_version": "0.1.0-beta.4",
+                "backend_version": "0.1.0-beta.5",
                 "recorder_status": "waiting",
             }
 
         return {
-            "backend_version": "0.1.0-beta.4",
+            "backend_version": "0.1.0-beta.5",
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),
