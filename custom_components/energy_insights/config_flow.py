@@ -39,7 +39,20 @@ def _sensor_selector(
     )
 
 
-def _schema() -> probatio.Schema:
+def _price_selector(hass) -> selector.EntitySelector:
+    """Return a sensor selector backed by the live state machine."""
+    sensor_entities = sorted(
+        state.entity_id for state in hass.states.async_all("sensor")
+    )
+    return selector.EntitySelector(
+        selector.EntitySelectorConfig(
+            domain=Platform.SENSOR,
+            include_entities=sensor_entities,
+        )
+    )
+
+
+def _schema(hass) -> probatio.Schema:
     """Return the Energy Insights source schema."""
     return probatio.Schema(
         {
@@ -49,7 +62,7 @@ def _schema() -> probatio.Schema:
             probatio.Required(CONF_POWER): _sensor_selector(
                 SensorDeviceClass.POWER
             ),
-            probatio.Optional(CONF_PRICE_NET): str,
+            probatio.Optional(CONF_PRICE_NET): _price_selector(hass),
             probatio.Optional(CONF_COST_GROSS_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_COST_NET_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_CURRENT_MONTH_ENERGY): _sensor_selector(
@@ -77,19 +90,12 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
-        errors: dict[str, str] = {}
-
         if user_input is not None:
-            price_entity = user_input.get(CONF_PRICE_NET)
-            if price_entity and self.hass.states.get(price_entity) is None:
-                errors[CONF_PRICE_NET] = "entity_not_found"
-            else:
-                return self.async_create_entry(title=NAME, data=user_input)
+            return self.async_create_entry(title=NAME, data=user_input)
 
         return self.async_show_form(
             step_id="user",
-            data_schema=_schema(),
-            errors=errors,
+            data_schema=_schema(self.hass),
         )
 
     async def async_step_reconfigure(
@@ -98,23 +104,16 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         """Reconfigure Energy Insights source entities."""
         entry = self._get_reconfigure_entry()
 
-        errors: dict[str, str] = {}
-
         if user_input is not None:
-            price_entity = user_input.get(CONF_PRICE_NET)
-            if price_entity and self.hass.states.get(price_entity) is None:
-                errors[CONF_PRICE_NET] = "entity_not_found"
-            else:
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data_updates=user_input,
-                )
+            return self.async_update_reload_and_abort(
+                entry,
+                data_updates=user_input,
+            )
 
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                _schema(),
+                _schema(self.hass),
                 dict(entry.data),
             ),
-            errors=errors,
         )
