@@ -1,7 +1,6 @@
 {
   "domain": "energy_insights",
   "name": "Energy Insights",
-  "version": "0.1.0-beta.2",
   "codeowners": [
     "@Jocke1970"
   ],
@@ -14,5 +13,6 @@
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/Jocke1970/HA-EnergyInsights/issues",
   "requirements": [],
-  "single_config_entry": true
+  "single_config_entry": true,
+  "version": "0.1.0-beta.3"
 }
