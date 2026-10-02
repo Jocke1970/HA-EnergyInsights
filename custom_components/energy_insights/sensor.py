@@ -65,12 +65,12 @@ class EnergyInsightsStatisticsSensor(
         data = self.coordinator.data
         if data is None:
             return {
-                "backend_version": "0.1.0-beta.1",
+                "backend_version": "0.1.0-beta.2",
                 "recorder_status": "waiting",
             }
 
         return {
-            "backend_version": "0.1.0-beta.1",
+            "backend_version": "0.1.0-beta.2",
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),
@@ -85,15 +85,25 @@ class EnergyInsightsStatisticsSensor(
             "lowest_day_date": data.lowest_day_date,
             "peak_power_kw": data.peak_power_kw,
             "peak_power_time": data.peak_power_time,
+            "price_low_month_sek_kwh": data.price_low_month,
+            "price_low_month_time": data.price_low_month_time,
+            "price_high_month_sek_kwh": data.price_high_month,
+            "price_high_month_time": data.price_high_month_time,
+            "price_low_year_sek_kwh": data.price_low_year,
+            "price_low_year_time": data.price_low_year_time,
+            "price_high_year_sek_kwh": data.price_high_year,
+            "price_high_year_time": data.price_high_year_time,
             "recorder_status": data.recorder_status,
             "recorder_error": data.recorder_error,
             "source_energy_total": data.source_energy_total,
             "source_power": data.source_power,
+            "source_price_net": data.source_price_net,
             "source_cost_gross_total": data.source_cost_gross_total,
             "source_cost_net_total": data.source_cost_net_total,
             "energy_month_rows": data.energy_month_rows,
             "energy_day_rows": data.energy_day_rows,
             "power_hour_rows": data.power_hour_rows,
+            "price_hour_rows": data.price_hour_rows,
             "gross_cost_month_rows": data.gross_cost_month_rows,
             "net_cost_month_rows": data.net_cost_month_rows,
         }
