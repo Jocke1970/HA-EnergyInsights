@@ -243,19 +243,29 @@ def _price_extremes(
         if not (start_ts <= row_start < end_ts):
             continue
 
-        row_min = row.get("min")
-        if row_min is not None:
-            numeric_min = float(row_min)
-            if low_value is None or numeric_min < low_value:
-                low_value = numeric_min
-                low_start = row_start
+        # Measurement sensors expose their canonical long-term statistic as
+        # "mean". Nord Pool prices are constant during each hourly bucket,
+        # so the hourly mean is the price we want to compare.
+        mean_value = row.get("mean")
+        if mean_value is not None:
+            low_candidate = high_candidate = float(mean_value)
+        else:
+            row_min = row.get("min")
+            row_max = row.get("max")
+            low_candidate = float(row_min) if row_min is not None else None
+            high_candidate = float(row_max) if row_max is not None else None
 
-        row_max = row.get("max")
-        if row_max is not None:
-            numeric_max = float(row_max)
-            if high_value is None or numeric_max > high_value:
-                high_value = numeric_max
-                high_start = row_start
+        if low_candidate is not None and (
+            low_value is None or low_candidate < low_value
+        ):
+            low_value = low_candidate
+            low_start = row_start
+
+        if high_candidate is not None and (
+            high_value is None or high_candidate > high_value
+        ):
+            high_value = high_candidate
+            high_start = row_start
 
     low_time = None
     if low_start is not None:
@@ -411,7 +421,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                     price_start,
                     dt_util.as_utc(now),
                     "hour",
-                    {"min", "max"},
+                    {"mean", "min", "max"},
                 )
                 if price_id
                 else {}
