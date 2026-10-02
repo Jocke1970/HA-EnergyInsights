@@ -6,7 +6,6 @@ on:
       - beta
     paths:
       - "custom_components/energy_insights/manifest.json"
-      - ".github/workflows/release-beta.yml"
   workflow_dispatch:
 
 permissions:
