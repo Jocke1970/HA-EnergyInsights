@@ -6,10 +6,11 @@ from datetime import timedelta
 
 DOMAIN = "energy_insights"
 NAME = "Energy Insights"
-VERSION = "0.1.0-beta.1"
+VERSION = "0.1.0-beta.2"
 
 CONF_ENERGY_TOTAL = "energy_total"
 CONF_POWER = "power"
+CONF_PRICE_NET = "price_net"
 CONF_COST_GROSS_TOTAL = "cost_gross_total"
 CONF_COST_NET_TOTAL = "cost_net_total"
 CONF_CURRENT_MONTH_ENERGY = "current_month_energy"
