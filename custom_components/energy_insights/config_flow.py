@@ -49,7 +49,7 @@ def _schema() -> probatio.Schema:
             probatio.Required(CONF_POWER): _sensor_selector(
                 SensorDeviceClass.POWER
             ),
-            probatio.Optional(CONF_PRICE_NET): _sensor_selector(),
+            probatio.Optional(CONF_PRICE_NET): str,
             probatio.Optional(CONF_COST_GROSS_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_COST_NET_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_CURRENT_MONTH_ENERGY): _sensor_selector(
@@ -77,10 +77,20 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
-        if user_input is not None:
-            return self.async_create_entry(title=NAME, data=user_input)
+        errors: dict[str, str] = {}
 
-        return self.async_show_form(step_id="user", data_schema=_schema())
+        if user_input is not None:
+            price_entity = user_input.get(CONF_PRICE_NET)
+            if price_entity and self.hass.states.get(price_entity) is None:
+                errors[CONF_PRICE_NET] = "entity_not_found"
+            else:
+                return self.async_create_entry(title=NAME, data=user_input)
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_schema(),
+            errors=errors,
+        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -88,11 +98,17 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         """Reconfigure Energy Insights source entities."""
         entry = self._get_reconfigure_entry()
 
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            return self.async_update_reload_and_abort(
-                entry,
-                data_updates=user_input,
-            )
+            price_entity = user_input.get(CONF_PRICE_NET)
+            if price_entity and self.hass.states.get(price_entity) is None:
+                errors[CONF_PRICE_NET] = "entity_not_found"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates=user_input,
+                )
 
         return self.async_show_form(
             step_id="reconfigure",
@@ -100,4 +116,5 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
                 _schema(),
                 dict(entry.data),
             ),
+            errors=errors,
         )
