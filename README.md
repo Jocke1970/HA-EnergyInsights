@@ -2,11 +2,11 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current HACS beta:** **2026-10 / v0.1.0-beta.5**
+> **Current HACS beta:** **2026-10 / v2026.10.0b1**
 
 ## Versioning from next beta
 
-The current `0.1.0-beta.5` release is the final legacy-version beta.
+The legacy `0.1.0-beta.5` release was the final beta using the old version format.
 
 Starting with the next beta, Energy Insights uses calendar-based PEP 440 versions:
 
@@ -22,7 +22,7 @@ Beta builds are distributed only through HACS.
 
 1. Add `Jocke1970/HA-EnergyInsights` as a custom **Integration** repository if needed.
 2. Enable **Show beta versions** for Energy Insights.
-3. Install/update to `v0.1.0-beta.5`.
+3. Install/update to `v2026.10.0b1`.
 4. Restart Home Assistant.
 5. Add or reconfigure **Energy Insights** under **Settings → Devices & services**.
 
@@ -44,6 +44,7 @@ The current beta includes:
 - optional live current-month utility-meter values
 - Nord Pool net price records for current month and year/history start
 - Recorder hourly `mean` statistics for Nord Pool measurement sensors
+- Recorder row diagnostics for Nord Pool statistics troubleshooting
 - 15-minute refresh
 - Swedish and English translations
 
