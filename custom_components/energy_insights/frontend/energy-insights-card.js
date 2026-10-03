@@ -1,4 +1,4 @@
-const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b5";
+const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b6";
 
 class EnergyInsightsCard extends HTMLElement {
   constructor() {
@@ -295,7 +295,7 @@ class EnergyInsightsCard extends HTMLElement {
         this._priceRecords(attrs) +
 
         '<div class="footer">' +
-          '<span>Energy Insights ' + this._escape(attrs.backend_version || ENERGY_INSIGHTS_CARD_VERSION) + '</span>' +
+          '<span>Kort ' + ENERGY_INSIGHTS_CARD_VERSION + ' · Backend ' + this._escape(attrs.backend_version || "–") + '</span>' +
           '<span>' + (
             attrs.price_records_source === "nordpool_quarter_hour"
               ? this._formatNumber(attrs.price_record_days, 0) + " dagar · kvartsdata"
