@@ -6,7 +6,7 @@ from datetime import timedelta
 
 DOMAIN = "energy_insights"
 NAME = "Energy Insights"
-VERSION = "2026.10.0b9"
+VERSION = "2026.10.0b10"
 
 CONF_ENERGY_TOTAL = "energy_total"
 CONF_POWER = "power"
