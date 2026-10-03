@@ -2,8 +2,8 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Development branch:** `0.1.0-dev.13`  
-> **Current HACS beta:** **2026-10 / v0.1.0-beta.5**
+> **Development branch:** `2026.10.0b2`  
+> **Current HACS beta:** **2026.10.0b1 / v2026.10.0b1**
 
 ## Goal
 
@@ -15,11 +15,11 @@ The current `0.1.0-beta.5` release is the final legacy-version beta.
 
 Starting with the next beta, Energy Insights uses calendar-based PEP 440 versions:
 
-- first beta: `2026.10.0b2`
+- first beta: `2026.10.0b1`
 - subsequent betas: `2026.10.0b2`, `2026.10.0b3`, …
 - stable release: `2026.10.0`
 
-Git tags use the same version prefixed with `v`, for example `v2026.10.0b2`.
+Git tags use the same version prefixed with `v`, for example `v2026.10.0b1`.
 
 ## Branch workflow
 
@@ -44,7 +44,9 @@ The Python integration currently provides:
 - peak power normalized to kW
 - current-month live utility-meter overrides
 - Nord Pool net price records for month and year/history start
-- Recorder hourly `mean` handling for Nord Pool measurement statistics
+- Recorder `state` handling for Nord Pool total-class statistics
+- Recorder `mean`/`min`/`max` fallback for measurement-class price sensors
+- Recorder-side power conversion to kW
 - 15-minute coordinator refresh
 - Swedish and English translations
 
