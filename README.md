@@ -2,7 +2,7 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current HACS beta:** **2026.10.0b6 / v2026.10.0b6**
+> **Current HACS beta:** **2026.10.0b7 / v2026.10.0b7**
 
 ## Goal
 
@@ -46,6 +46,7 @@ The Python integration currently provides:
 - Nord Pool price records for month and year/history start
 - exact quarter-hour Nord Pool history with persistent daily-extrema cache when the selected source is the Nord Pool custom integration
 - today's price records only include elapsed quarter-hours; future published quarter-hours are excluded
+- startup-safe Nord Pool ordering via optional `after_dependencies`, with persistent quarter-hour cache retained if the Nord Pool action is temporarily unavailable
 - Recorder `state` handling for Nord Pool total-class statistics
 - Recorder `mean`/`min`/`max` fallback for measurement-class price sensors
 - Recorder-side power conversion to kW
