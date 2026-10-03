@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b3**
-- current HACS beta tag: **v2026.10.0b3**
+- current HACS beta release name: **2026.10.0b7**
+- current HACS beta tag: **v2026.10.0b7**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -111,6 +111,26 @@ Development version `2026.10.0b7` fixes a startup race where Energy Insights cou
 - if the action is temporarily unavailable, persisted quarter-hour history plus `raw_today` is retained
 - Recorder hourly is no longer selected merely because Nord Pool is still finishing startup
 
+## Verified 2026.10.0b7 runtime
+
+Runtime verification on 2026-10-03 confirmed the complete card/backend path after restart:
+
+- frontend card version: `2026.10.0b7`
+- backend version: `2026.10.0b7`
+- price source: Nord Pool quarter-hour history
+- cached history: 33 days
+- VAT basis shown correctly as 25 %
+- current-month low: 0.16 SEK/kWh on 2026-10-02 01:00
+- current-month high: 2.19 SEK/kWh on 2026-10-02 18:00
+- year/history-start low: -0.04 SEK/kWh on 2026-09-19 15:00
+- year/history-start high: 5.28 SEK/kWh on 2026-09-22 19:00
+- future published quarter-hours are excluded from "record so far"
+- restart no longer falls back to Recorder hourly statistics
+- peak power remains correctly normalized to 4.84 kW
+- completed-day filtering remains correct
+
+The bundled card and statistics backend are now runtime-verified together.
+
 ## Bundled dashboard card
 
 Development version `2026.10.0b4` adds a first-party Lovelace card:
@@ -136,7 +156,7 @@ Do not add new period-statistics or price-record logic to YAML.
 
 ## Next milestones
 
-1. Runtime-test the bundled Energy Insights JavaScript card.
+1. Polish the bundled Energy Insights card UI.
 2. Remove the legacy YAML period selector after the new card is verified.
 3. Move monthly archive persistence into Python.
 4. Remove the remaining archive YAML/shell/CSV backend after parity is verified.
