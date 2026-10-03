@@ -176,8 +176,8 @@ class EnergyInsightsCard extends HTMLElement {
     return (
       '<section class="records-section">' +
         '<div class="section-title-row">' +
-          '<div><div class="section-kicker">Nord Pool</div><h3>Prisrekord · netto</h3></div>' +
-          '<div class="section-subtitle">Exkl. skatt och moms</div>' +
+          '<div><div class="section-kicker">Nord Pool · kvartspris</div><h3>Prisrekord</h3></div>' +
+          '<div class="section-subtitle">' + this._priceBasis(attrs) + '</div>' +
         '</div>' +
         '<div class="record-period">' +
           '<div class="record-heading"><span>Denna månad</span></div>' +
