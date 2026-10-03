@@ -8,19 +8,19 @@ The current HACS beta `v0.1.0-beta.5` is the final legacy-version beta.
 
 From the next beta onward, use calendar-based PEP 440 versions:
 
-- `2026.10.0b2`, `2026.10.0b2`, … for October 2026 betas
+- `2026.10.0b1`, `2026.10.0b2`, … for October 2026 betas
 - `2026.10.0` for the corresponding stable release
 - future months follow the same `YYYY.MM.PATCHbN` / `YYYY.MM.PATCH` pattern
 
-Git tags are prefixed with `v`, for example `v2026.10.0b2`.
+Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 
 ## Release model
 
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026-10**
-- current HACS beta tag: **v0.1.0-beta.5**
+- current HACS beta release name: **2026.10.0b1**
+- current HACS beta tag: **v2026.10.0b1**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -80,7 +80,7 @@ Do not add new period-statistics or price-record logic to YAML.
 
 ## Next milestones
 
-1. Verify `v0.1.0-beta.5` Nord Pool month/year records in Home Assistant.
+1. Verify `2026.10.0b2` Nord Pool month/year records in Home Assistant.
 2. Build/migrate the Energy Insights JavaScript card.
 3. Remove the legacy YAML period selector after the old card no longer depends on it.
 4. Move monthly archive persistence into Python.
