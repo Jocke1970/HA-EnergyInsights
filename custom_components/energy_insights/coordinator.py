@@ -245,17 +245,21 @@ def _price_extremes(
         if not (start_ts <= row_start < end_ts):
             continue
 
-        # Measurement sensors expose their canonical long-term statistic as
-        # "mean". Nord Pool prices are constant during each hourly bucket,
-        # so the hourly mean is the price we want to compare.
-        mean_value = row.get("mean")
-        if mean_value is not None:
-            low_candidate = high_candidate = float(mean_value)
+        # The Nord Pool custom sensor currently declares state_class "total",
+        # so Recorder stores its long-term value as "state". Keep mean/min/max
+        # fallbacks for compatible price sensors using measurement statistics.
+        state_value = row.get("state")
+        if state_value is not None:
+            low_candidate = high_candidate = float(state_value)
         else:
-            row_min = row.get("min")
-            row_max = row.get("max")
-            low_candidate = float(row_min) if row_min is not None else None
-            high_candidate = float(row_max) if row_max is not None else None
+            mean_value = row.get("mean")
+            if mean_value is not None:
+                low_candidate = high_candidate = float(mean_value)
+            else:
+                row_min = row.get("min")
+                row_max = row.get("max")
+                low_candidate = float(row_min) if row_min is not None else None
+                high_candidate = float(row_max) if row_max is not None else None
 
         if low_candidate is not None and (
             low_value is None or low_candidate < low_value
@@ -370,6 +374,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
         end: datetime,
         period: str,
         types: set[str],
+        units: dict[str, str] | None = None,
     ) -> dict[str, list[dict[str, Any]]]:
         """Read Recorder statistics without blocking the event loop."""
         if not statistic_ids:
@@ -382,7 +387,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             end,
             statistic_ids,
             period,
-            None,
+            units,
             types,
         )
 
@@ -439,6 +444,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 end,
                 "hour",
                 {"max"},
+                {"power": "kW"},
             )
             price_stats = (
                 await self._statistics(
@@ -446,7 +452,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                     price_start,
                     dt_util.as_utc(now),
                     "hour",
-                    {"mean", "min", "max"},
+                    {"state", "mean", "min", "max"},
                 )
                 if price_id
                 else {}
@@ -519,18 +525,12 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             end_ts,
         )
 
-        power_state = self.hass.states.get(power_id)
-        power_unit = (
-            power_state.attributes.get("unit_of_measurement")
-            if power_state is not None
-            else None
-        )
         peak_power, peak_time = _peak_power(
             power_stats,
             power_id,
             start_ts,
             end_ts,
-            power_unit,
+            "kW",
         )
 
         (
