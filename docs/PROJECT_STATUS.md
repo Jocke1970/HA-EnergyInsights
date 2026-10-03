@@ -103,6 +103,14 @@ This avoids missing intra-hour peaks such as 2026-10-02 18:00.
 
 Development version `2026.10.0b6` excludes future published `raw_today` quarters from today's price records. A record shown as "lägst/högst" must have occurred already. The card footer also shows both frontend and backend versions so browser-cache mismatches are immediately visible.
 
+## Nord Pool startup ordering
+
+Development version `2026.10.0b7` fixes a startup race where Energy Insights could refresh before Nord Pool registered its `hourly` action and incorrectly fall back to Recorder hourly statistics.
+
+- `nordpool` is an optional `after_dependencies` entry
+- if the action is temporarily unavailable, persisted quarter-hour history plus `raw_today` is retained
+- Recorder hourly is no longer selected merely because Nord Pool is still finishing startup
+
 ## Bundled dashboard card
 
 Development version `2026.10.0b4` adds a first-party Lovelace card:
