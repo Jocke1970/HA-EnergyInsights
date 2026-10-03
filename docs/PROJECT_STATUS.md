@@ -86,6 +86,19 @@ Runtime verification on 2026-10-03 confirmed:
 
 The statistics backend is ready for the dedicated dashboard card.
 
+## Quarter-hour price correction
+
+Development version `2026.10.0b5` fixes price extrema for Nord Pool after the market moved to 15-minute settlement:
+
+- Recorder hourly `state` is retained only as fallback
+- Nord Pool sources are backfilled from the integration's `nordpool.hourly` response
+- daily quarter-hour extrema are cached persistently by Energy Insights
+- today's values use the source sensor's calculated `raw_today`
+- the card labels the configured VAT basis instead of claiming prices are always excluding VAT
+- `backend_version` now uses the shared integration `VERSION` constant
+
+This avoids missing intra-hour peaks such as 2026-10-02 18:00.
+
 ## Bundled dashboard card
 
 Development version `2026.10.0b4` adds a first-party Lovelace card:
