@@ -156,6 +156,16 @@ Development version `2026.10.0b8` is a full visual redesign rather than an incre
 - footer shows source, last update time and frontend/backend versions
 - responsive breakpoints are tuned for narrow Home Assistant dashboard columns
 
+## Cost module refinement
+
+Development version `2026.10.0b9` keeps the premium b8 composition but replaces the cramped two-column cost cards with a single grouped cost module:
+
+- Brutto and Netto are stacked as two horizontal rows
+- full SEK values get priority width
+- average SEK/kWh is aligned on the right
+- the internal "card inside card" look is removed
+- narrow-column behavior is preserved without clipping
+
 ## Temporary Home Assistant YAML
 
 The following remain outside this repository until Python replacements are finished:
