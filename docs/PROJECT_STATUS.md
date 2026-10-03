@@ -143,6 +143,19 @@ Development version `2026.10.0b4` adds a first-party Lovelace card:
 - default entities for the current installation: `select.period` and `sensor.statistik`
 - responsive period selector, KPI grid and Nord Pool price-record section
 
+## Premium UI revision
+
+Development version `2026.10.0b8` is a full visual redesign rather than an incremental CSS pass:
+
+- consumption is the primary hero KPI
+- gross/net cost and their average prices are grouped into one cost module
+- duplicate standalone average-price cards are removed
+- daily average/high/low and peak power form a compact 2×2 KPI grid
+- period selection is a toolbar with an explicit date range
+- Nord Pool records use compact low/high rows with 15-minute and VAT badges
+- footer shows source, last update time and frontend/backend versions
+- responsive breakpoints are tuned for narrow Home Assistant dashboard columns
+
 ## Temporary Home Assistant YAML
 
 The following remain outside this repository until Python replacements are finished:
@@ -156,7 +169,7 @@ Do not add new period-statistics or price-record logic to YAML.
 
 ## Next milestones
 
-1. Polish the bundled Energy Insights card UI.
+1. Runtime-test the premium Energy Insights card UI on desktop/mobile.
 2. Remove the legacy YAML period selector after the new card is verified.
 3. Move monthly archive persistence into Python.
 4. Remove the remaining archive YAML/shell/CSV backend after parity is verified.
