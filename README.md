@@ -2,7 +2,8 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current HACS beta:** **2026.10.0b3 / v2026.10.0b3**
+> **Development branch:** `2026.10.0b4`  
+> **Current HACS beta:** **2026.10.0b2 / v2026.10.0b2**
 
 ## Goal
 
@@ -76,9 +77,21 @@ The dev installer is only for development testing. HACS beta builds are installe
 
 See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the ownership/migration map and verified reference values.
 
+## First-party dashboard card
+
+The Energy Insights card is bundled with the integration and auto-loaded by Home Assistant. No manual Lovelace resource or Mushroom dependency is required.
+
+```yaml
+type: custom:energy-insights-card
+period_entity: select.period
+statistics_entity: sensor.statistik
+```
+
+The first card version includes the period selector, energy/cost KPIs, daily high/low, peak power and Nord Pool month/year price records.
+
 ## Next milestone
 
-Verify the 2026-10 beta price records, then move the dashboard to the dedicated Energy Insights card and continue the monthly archive migration.
+Runtime-test the bundled card in Home Assistant, then retire the legacy Lovelace/YAML period-statistics UI.
 
 ## License
 

@@ -86,6 +86,18 @@ Runtime verification on 2026-10-03 confirmed:
 
 The statistics backend is ready for the dedicated dashboard card.
 
+## Bundled dashboard card
+
+Development version `2026.10.0b4` adds a first-party Lovelace card:
+
+- custom element: `custom:energy-insights-card`
+- bundled under `custom_components/energy_insights/frontend/`
+- auto-loaded by the integration through Home Assistant frontend/http
+- no manual Lovelace resource
+- no Mushroom dependency
+- default entities for the current installation: `select.period` and `sensor.statistik`
+- responsive period selector, KPI grid and Nord Pool price-record section
+
 ## Temporary Home Assistant YAML
 
 The following remain outside this repository until Python replacements are finished:
@@ -99,9 +111,8 @@ Do not add new period-statistics or price-record logic to YAML.
 
 ## Next milestones
 
-1. Build and migrate the Energy Insights JavaScript card.
-2. Build/migrate the Energy Insights JavaScript card.
-3. Remove the legacy YAML period selector after the old card no longer depends on it.
-4. Move monthly archive persistence into Python.
-5. Remove the remaining archive YAML/shell/CSV backend after parity is verified.
-6. Promote a verified build to `main` and publish `v0.1.0`.
+1. Runtime-test the bundled Energy Insights JavaScript card.
+2. Remove the legacy YAML period selector after the new card is verified.
+3. Move monthly archive persistence into Python.
+4. Remove the remaining archive YAML/shell/CSV backend after parity is verified.
+5. Promote a verified build to `main` and publish `2026.10.0`.
