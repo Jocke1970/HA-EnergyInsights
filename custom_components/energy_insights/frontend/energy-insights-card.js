@@ -1,4 +1,4 @@
-const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b4";
+const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b5";
 
 class EnergyInsightsCard extends HTMLElement {
   constructor() {
@@ -161,14 +161,23 @@ class EnergyInsightsCard extends HTMLElement {
     );
   }
 
+  _priceBasis(attrs) {
+    const vat = this._number(attrs.price_vat_rate);
+    if (Number.isFinite(vat) && vat > 0) {
+      return "Inkl. " + this._formatNumber(vat * 100, 1) + " % moms";
+    }
+    if (Number.isFinite(vat) && vat === 0) return "Exkl. moms";
+    return "Enligt vald prissensor";
+  }
+
   _priceRecords(attrs) {
     if (this._config?.show_price_records === false) return "";
     const start = this._historyStart(attrs);
     return (
       '<section class="records-section">' +
         '<div class="section-title-row">' +
-          '<div><div class="section-kicker">Nord Pool</div><h3>Prisrekord · netto</h3></div>' +
-          '<div class="section-subtitle">Exkl. skatt och moms</div>' +
+          '<div><div class="section-kicker">Nord Pool · kvartspris</div><h3>Prisrekord</h3></div>' +
+          '<div class="section-subtitle">' + this._priceBasis(attrs) + '</div>' +
         '</div>' +
         '<div class="record-period">' +
           '<div class="record-heading"><span>Denna månad</span></div>' +
@@ -287,7 +296,11 @@ class EnergyInsightsCard extends HTMLElement {
 
         '<div class="footer">' +
           '<span>Energy Insights ' + this._escape(attrs.backend_version || ENERGY_INSIGHTS_CARD_VERSION) + '</span>' +
-          '<span>' + this._formatNumber(attrs.price_hour_rows, 0) + ' h Nord Pool</span>' +
+          '<span>' + (
+            attrs.price_records_source === "nordpool_quarter_hour"
+              ? this._formatNumber(attrs.price_record_days, 0) + " dagar · kvartsdata"
+              : this._formatNumber(attrs.price_hour_rows, 0) + " h · Recorder"
+          ) + '</span>' +
         '</div>' +
       '</ha-card>';
   }

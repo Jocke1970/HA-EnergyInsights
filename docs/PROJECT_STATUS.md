@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b3**
-- current HACS beta tag: **v2026.10.0b3**
+- current HACS beta release name: **2026.10.0b5**
+- current HACS beta tag: **v2026.10.0b5**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -85,6 +85,19 @@ Runtime verification on 2026-10-03 confirmed:
 - Recorder power statistics are normalized to kW
 
 The statistics backend is ready for the dedicated dashboard card.
+
+## Quarter-hour price correction
+
+Development version `2026.10.0b5` fixes price extrema for Nord Pool after the market moved to 15-minute settlement:
+
+- Recorder hourly `state` is retained only as fallback
+- Nord Pool sources are backfilled from the integration's `nordpool.hourly` response
+- daily quarter-hour extrema are cached persistently by Energy Insights
+- today's values use the source sensor's calculated `raw_today`
+- the card labels the configured VAT basis instead of claiming prices are always excluding VAT
+- `backend_version` now uses the shared integration `VERSION` constant
+
+This avoids missing intra-hour peaks such as 2026-10-02 18:00.
 
 ## Bundled dashboard card
 
