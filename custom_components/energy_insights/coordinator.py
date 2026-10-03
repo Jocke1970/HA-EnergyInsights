@@ -71,6 +71,8 @@ class EnergyInsightsData:
     energy_day_rows: int
     power_hour_rows: int
     price_hour_rows: int
+    price_row_keys: str | None
+    price_row_sample: str | None
     gross_cost_month_rows: int
     net_cost_month_rows: int
 
@@ -280,6 +282,29 @@ def _price_extremes(
     return low_value, low_time, high_value, high_time
 
 
+
+def _price_row_diagnostics(
+    result: dict[str, list[dict[str, Any]]],
+    statistic_id: str | None,
+) -> tuple[str | None, str | None]:
+    """Return compact diagnostics for the first price statistics row."""
+    if not statistic_id:
+        return None, None
+
+    rows = result.get(statistic_id, [])
+    if not rows:
+        return None, None
+
+    row = rows[0]
+    keys = ",".join(sorted(str(key) for key in row))
+    sample = ", ".join(
+        f"{key}={row.get(key)!r}"
+        for key in sorted(row)
+        if key != "start"
+    )
+    return keys, sample[:500]
+
+
 class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
     """Coordinate Energy Insights statistics."""
 
@@ -438,6 +463,11 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             power_stats = {}
             price_stats = {}
 
+        price_row_keys, price_row_sample = _price_row_diagnostics(
+            price_stats,
+            price_id,
+        )
+
         is_current_month = self.selected_period == now.strftime("%Y-%m")
 
         energy = (
@@ -595,6 +625,8 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             price_hour_rows=(
                 len(price_stats.get(price_id, [])) if price_id else 0
             ),
+            price_row_keys=price_row_keys,
+            price_row_sample=price_row_sample,
             gross_cost_month_rows=(
                 len(month_stats.get(gross_total_id, []))
                 if gross_total_id
