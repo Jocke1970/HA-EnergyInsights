@@ -2,7 +2,8 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current HACS beta:** **2026.10.0b12 / v2026.10.0b12**
+> **Development branch:** `2026.10.0b12`  
+> **Current HACS beta:** **2026.10.0b11 / v2026.10.0b11**
 
 ## Goal
 
