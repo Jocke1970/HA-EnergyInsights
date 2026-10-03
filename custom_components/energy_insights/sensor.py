@@ -70,7 +70,7 @@ class EnergyInsightsStatisticsSensor(
             }
 
         return {
-            "backend_version": "2026.10.0b3",
+            "backend_version": VERSION,
             "period": data.period,
             "period_start": data.period_start.isoformat(),
             "period_end": data.period_end.isoformat(),
