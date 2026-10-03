@@ -166,6 +166,15 @@ Development version `2026.10.0b9` keeps the premium b8 composition but replaces 
 - the internal "card inside card" look is removed
 - narrow-column behavior is preserved without clipping
 
+## Footer contrast refinement
+
+Development version `2026.10.0b10` fixes low-contrast footer text on light themes:
+
+- source/update text uses readable primary-text contrast
+- source icon keeps the Energy Insights accent
+- frontend/backend version diagnostics use a red high-contrast badge
+- footer opacity is no longer reduced
+
 ## Temporary Home Assistant YAML
 
 The following remain outside this repository until Python replacements are finished:
