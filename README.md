@@ -2,8 +2,8 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Development branch:** `2026.10.0b2`  
-> **Current HACS beta:** **2026.10.0b1 / v2026.10.0b1**
+> **Development branch:** `2026.10.0b3`  
+> **Current HACS beta:** **2026.10.0b2 / v2026.10.0b2**
 
 ## Goal
 
@@ -41,6 +41,7 @@ The Python integration currently provides:
 - Recorder long-term statistics queries
 - selected-period energy, gross/net cost and weighted prices
 - average daily use and high/low consumption day
+- incomplete current-day buckets are excluded from daily averages/extremes
 - peak power normalized to kW
 - current-month live utility-meter overrides
 - Nord Pool net price records for month and year/history start
