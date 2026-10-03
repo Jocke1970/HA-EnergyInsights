@@ -1,4 +1,4 @@
-const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b11";
+const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b12";
 
 class EnergyInsightsCard extends HTMLElement {
   constructor() {
@@ -226,9 +226,7 @@ class EnergyInsightsCard extends HTMLElement {
   _statsSummary(attrs) {
     return (
       this._formatNumber(attrs.average_kwh_per_day, 2) + " kWh/dag · " +
-      this._formatNumber(attrs.lowest_day_kwh, 2) + "–" +
-      this._formatNumber(attrs.highest_day_kwh, 2) + " kWh · " +
-      this._formatNumber(attrs.peak_power_kw, 2) + " kW peak"
+      "topp " + this._formatNumber(attrs.peak_power_kw, 2) + " kW"
     );
   }
 
