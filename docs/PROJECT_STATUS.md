@@ -20,7 +20,7 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
 - current HACS beta release name: **2026-10**
-- current HACS beta tag: **v2026.10.0b1**
+- current HACS beta tag: **v2026.10.0b2**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
