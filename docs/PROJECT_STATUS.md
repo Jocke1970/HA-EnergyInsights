@@ -99,6 +99,10 @@ Development version `2026.10.0b5` fixes price extrema for Nord Pool after the ma
 
 This avoids missing intra-hour peaks such as 2026-10-02 18:00.
 
+## Elapsed-quarter correction
+
+Development version `2026.10.0b6` excludes future published `raw_today` quarters from today's price records. A record shown as "lägst/högst" must have occurred already. The card footer also shows both frontend and backend versions so browser-cache mismatches are immediately visible.
+
 ## Bundled dashboard card
 
 Development version `2026.10.0b4` adds a first-party Lovelace card:
