@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b1**
-- current HACS beta tag: **v2026.10.0b1**
+- current HACS beta release name: **2026.10.0b2**
+- current HACS beta tag: **v2026.10.0b2**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -34,6 +34,7 @@ Energy Insights owns:
 - weighted average gross/net price
 - average daily consumption
 - highest/lowest consumption day
+- incomplete current-day buckets are excluded from daily average/high/low calculations
 - peak power
 - Nord Pool net price records for current month
 - Nord Pool net price records for current year/history start
@@ -80,7 +81,7 @@ Do not add new period-statistics or price-record logic to YAML.
 
 ## Next milestones
 
-1. Verify `2026.10.0b2` Nord Pool month/year records in Home Assistant.
+1. Verify `2026.10.0b3` completed-day handling and Nord Pool records in Home Assistant.
 2. Build/migrate the Energy Insights JavaScript card.
 3. Remove the legacy YAML period selector after the old card no longer depends on it.
 4. Move monthly archive persistence into Python.
