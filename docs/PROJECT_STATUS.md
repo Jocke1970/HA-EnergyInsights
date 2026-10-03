@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b5**
-- current HACS beta tag: **v2026.10.0b5**
+- current HACS beta release name: **2026.10.0b6**
+- current HACS beta tag: **v2026.10.0b6**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -98,6 +98,10 @@ Development version `2026.10.0b5` fixes price extrema for Nord Pool after the ma
 - `backend_version` now uses the shared integration `VERSION` constant
 
 This avoids missing intra-hour peaks such as 2026-10-02 18:00.
+
+## Elapsed-quarter correction
+
+Development version `2026.10.0b6` excludes future published `raw_today` quarters from today's price records. A record shown as "lägst/högst" must have occurred already. The card footer also shows both frontend and backend versions so browser-cache mismatches are immediately visible.
 
 ## Bundled dashboard card
 

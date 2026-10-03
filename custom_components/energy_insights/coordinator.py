@@ -521,8 +521,9 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
     def _daily_record_from_raw_today(
         self,
         entity_id: str,
+        now: datetime,
     ) -> dict[str, Any] | None:
-        """Build today's extrema from the source sensor's calculated raw_today."""
+        """Build today's elapsed extrema from the source sensor's raw_today."""
         state = self.hass.states.get(entity_id)
         raw_today = state.attributes.get("raw_today") if state else None
         if not isinstance(raw_today, list):
@@ -537,7 +538,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             except (TypeError, ValueError):
                 continue
             start = self._parse_price_time(item.get("start"))
-            if start is not None:
+            if start is not None and start <= now:
                 values.append((value, start))
 
         if not values:
@@ -660,7 +661,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             await self._save_price_cache()
 
         days = dict(self._price_days)
-        today_record = self._daily_record_from_raw_today(entity_id)
+        today_record = self._daily_record_from_raw_today(entity_id, now)
         if today_record is not None:
             days[today.isoformat()] = today_record
 
