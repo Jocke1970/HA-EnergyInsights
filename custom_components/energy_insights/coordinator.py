@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 import logging
 from typing import Any
 
@@ -11,6 +12,8 @@ from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -31,6 +34,53 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+_PRICE_STORAGE_VERSION = 1
+_NORDPOOL_VAT = {
+    "DK1": 0.25,
+    "DK2": 0.25,
+    "FI": 0.255,
+    "EE": 0.24,
+    "LT": 0.21,
+    "LV": 0.21,
+    "NO1": 0.25,
+    "NO2": 0.25,
+    "NO3": 0.25,
+    "NO4": 0.25,
+    "NO5": 0.25,
+    "SE1": 0.25,
+    "SE2": 0.25,
+    "SE3": 0.25,
+    "SE4": 0.25,
+    "FR": 0.055,
+    "NL": 0.21,
+    "BE": 0.06,
+    "AT": 0.20,
+    "GER": 0.19,
+}
+_NORDPOOL_CURRENCY = {
+    "DK1": "DKK",
+    "DK2": "DKK",
+    "FI": "EUR",
+    "EE": "EUR",
+    "LT": "EUR",
+    "LV": "EUR",
+    "NO1": "NOK",
+    "NO2": "NOK",
+    "NO3": "NOK",
+    "NO4": "NOK",
+    "NO5": "NOK",
+    "SE1": "SEK",
+    "SE2": "SEK",
+    "SE3": "SEK",
+    "SE4": "SEK",
+    "FR": "EUR",
+    "NL": "EUR",
+    "BE": "EUR",
+    "AT": "EUR",
+    "GER": "EUR",
+}
+_NORDPOOL_DIVISOR = {"kWh": 1000.0, "MWh": 1.0, "Wh": 1_000_000.0}
 
 
 @dataclass(slots=True)
@@ -71,6 +121,10 @@ class EnergyInsightsData:
     energy_day_rows: int
     power_hour_rows: int
     price_hour_rows: int
+    price_records_source: str
+    price_record_days: int
+    price_vat_rate: float | None
+    price_records_error: str | None
     gross_cost_month_rows: int
     net_cost_month_rows: int
 
@@ -304,6 +358,14 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
         self.selected_period = (
             saved_period if saved_period in available_periods else default_period
         )
+        self._price_store: Store[dict[str, Any]] = Store(
+            hass,
+            _PRICE_STORAGE_VERSION,
+            f"{DOMAIN}.price_records.{entry.entry_id}",
+        )
+        self._price_cache_loaded = False
+        self._price_cache_source: str | None = None
+        self._price_days: dict[str, dict[str, Any]] = {}
 
         super().__init__(
             hass,
@@ -343,6 +405,299 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             return float(state.state)
         except (TypeError, ValueError):
             return None
+
+    async def _ensure_price_cache(self, source: str) -> None:
+        """Load persisted Nord Pool daily extrema once."""
+        if self._price_cache_loaded and self._price_cache_source == source:
+            return
+
+        stored = await self._price_store.async_load()
+        if stored and stored.get("source") == source:
+            days = stored.get("days", {})
+            self._price_days = days if isinstance(days, dict) else {}
+        else:
+            self._price_days = {}
+
+        self._price_cache_source = source
+        self._price_cache_loaded = True
+
+    async def _save_price_cache(self) -> None:
+        """Persist Nord Pool daily extrema."""
+        await self._price_store.async_save(
+            {
+                "source": self._price_cache_source,
+                "days": self._price_days,
+            }
+        )
+
+    def _nordpool_config(self, entity_id: str | None) -> dict[str, Any] | None:
+        """Return source settings when the selected sensor is Nord Pool."""
+        if not entity_id:
+            return None
+
+        registry_entry = er.async_get(self.hass).async_get(entity_id)
+        if (
+            registry_entry is None
+            or registry_entry.platform != "nordpool"
+            or not registry_entry.config_entry_id
+        ):
+            return None
+
+        entry = self.hass.config_entries.async_get_entry(
+            registry_entry.config_entry_id
+        )
+        state = self.hass.states.get(entity_id)
+        if entry is None or state is None:
+            return None
+
+        area = state.attributes.get("region") or entry.data.get("region")
+        if not area:
+            return None
+
+        currency = (
+            state.attributes.get("currency")
+            or entry.data.get("currency")
+            or _NORDPOOL_CURRENCY.get(str(area))
+        )
+        if not currency:
+            return None
+
+        price_type = entry.data.get("price_type", "kWh")
+        divisor = _NORDPOOL_DIVISOR.get(str(price_type))
+        if divisor is None:
+            return None
+
+        additional_costs = str(entry.data.get("additional_costs") or "").replace(
+            " ", ""
+        )
+        if additional_costs not in {"", "{{0.0|float}}", "{{0|float}}"}:
+            return None
+
+        vat_rate = (
+            _NORDPOOL_VAT.get(str(area), 0.0)
+            if entry.data.get("VAT", True)
+            else 0.0
+        )
+
+        return {
+            "area": str(area),
+            "currency": str(currency),
+            "divisor": divisor,
+            "vat_rate": float(vat_rate),
+            "precision": int(entry.data.get("precision", 3)),
+            "price_in_cents": bool(entry.data.get("price_in_cents", False)),
+        }
+
+    @staticmethod
+    def _parse_price_time(value: Any) -> datetime | None:
+        """Parse a Nord Pool timestamp into local time."""
+        if isinstance(value, datetime):
+            parsed = value
+        elif value:
+            parsed = dt_util.parse_datetime(str(value))
+        else:
+            return None
+
+        if parsed is None:
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        return dt_util.as_local(parsed)
+
+    @staticmethod
+    def _convert_nordpool_price(value: Any, config: dict[str, Any]) -> float | None:
+        """Convert Nord Pool API price to the selected sensor's price semantics."""
+        try:
+            raw = float(str(value).replace(",", ".").replace(" ", ""))
+        except (TypeError, ValueError):
+            return None
+
+        price = raw / float(config["divisor"])
+        price *= 1.0 + float(config["vat_rate"])
+        if config["price_in_cents"]:
+            price *= 100.0
+        return round(price, int(config["precision"]))
+
+    def _daily_record_from_raw_today(
+        self,
+        entity_id: str,
+    ) -> dict[str, Any] | None:
+        """Build today's extrema from the source sensor's calculated raw_today."""
+        state = self.hass.states.get(entity_id)
+        raw_today = state.attributes.get("raw_today") if state else None
+        if not isinstance(raw_today, list):
+            return None
+
+        values: list[tuple[float, datetime]] = []
+        for item in raw_today:
+            if not isinstance(item, dict):
+                continue
+            try:
+                value = float(item.get("value"))
+            except (TypeError, ValueError):
+                continue
+            start = self._parse_price_time(item.get("start"))
+            if start is not None:
+                values.append((value, start))
+
+        if not values:
+            return None
+
+        low_value, low_time = min(values, key=lambda item: item[0])
+        high_value, high_time = max(values, key=lambda item: item[0])
+        return {
+            "low": low_value,
+            "low_time": low_time.strftime("%Y-%m-%d %H:%M"),
+            "high": high_value,
+            "high_time": high_time.strftime("%Y-%m-%d %H:%M"),
+        }
+
+    async def _fetch_nordpool_day(
+        self,
+        day: date,
+        config: dict[str, Any],
+    ) -> tuple[str, dict[str, Any] | None, str | None]:
+        """Fetch one historical Nord Pool day and return quarter-hour extrema."""
+        try:
+            response = await self.hass.services.async_call(
+                "nordpool",
+                "hourly",
+                {
+                    "currency": config["currency"],
+                    "date": day,
+                    "area": [config["area"]],
+                },
+                blocking=True,
+                return_response=True,
+            )
+        except Exception as err:  # noqa: BLE001
+            return day.isoformat(), None, f"{type(err).__name__}: {err}"
+
+        if not isinstance(response, dict):
+            return day.isoformat(), None, "Unexpected Nord Pool response"
+
+        values: list[tuple[float, datetime]] = []
+        for row in response.get("multiAreaEntries", []):
+            if not isinstance(row, dict):
+                continue
+            area_values = row.get("entryPerArea", {})
+            if not isinstance(area_values, dict):
+                continue
+            converted = self._convert_nordpool_price(
+                area_values.get(config["area"]),
+                config,
+            )
+            start = self._parse_price_time(row.get("deliveryStart"))
+            if converted is not None and start is not None:
+                values.append((converted, start))
+
+        if not values:
+            return day.isoformat(), None, "No quarter-hour values returned"
+
+        low_value, low_time = min(values, key=lambda item: item[0])
+        high_value, high_time = max(values, key=lambda item: item[0])
+        return (
+            day.isoformat(),
+            {
+                "low": low_value,
+                "low_time": low_time.strftime("%Y-%m-%d %H:%M"),
+                "high": high_value,
+                "high_time": high_time.strftime("%Y-%m-%d %H:%M"),
+            },
+            None,
+        )
+
+    async def _nordpool_price_extremes(
+        self,
+        entity_id: str,
+        year_start_local: datetime,
+        month_start_local: datetime,
+        now: datetime,
+    ) -> tuple[
+        tuple[float | None, str | None, float | None, str | None],
+        tuple[float | None, str | None, float | None, str | None],
+        int,
+        float | None,
+        str | None,
+    ] | None:
+        """Return exact Nord Pool quarter-hour extrema with persistent backfill."""
+        config = self._nordpool_config(entity_id)
+        if config is None or not self.hass.services.has_service("nordpool", "hourly"):
+            return None
+
+        cache_source = (
+            f"{entity_id}|{config['area']}|{config['currency']}|"
+            f"{config['vat_rate']}|{config['divisor']}|"
+            f"{config['price_in_cents']}|{config['precision']}"
+        )
+        await self._ensure_price_cache(cache_source)
+
+        first_day = year_start_local.date()
+        today = now.date()
+        yesterday = today - timedelta(days=1)
+        missing: list[date] = []
+        cursor = first_day
+        while cursor <= yesterday:
+            if cursor.isoformat() not in self._price_days:
+                missing.append(cursor)
+            cursor += timedelta(days=1)
+
+        errors: list[str] = []
+        cache_changed = False
+        for index in range(0, len(missing), 6):
+            batch = missing[index : index + 6]
+            results = await asyncio.gather(
+                *(self._fetch_nordpool_day(day, config) for day in batch)
+            )
+            for key, record, error in results:
+                if record is not None:
+                    self._price_days[key] = record
+                    cache_changed = True
+                elif error:
+                    errors.append(f"{key}: {error}")
+
+        if cache_changed:
+            await self._save_price_cache()
+
+        days = dict(self._price_days)
+        today_record = self._daily_record_from_raw_today(entity_id)
+        if today_record is not None:
+            days[today.isoformat()] = today_record
+
+        def period_extremes(
+            start_day: date,
+        ) -> tuple[float | None, str | None, float | None, str | None]:
+            records = [
+                record
+                for day_key, record in days.items()
+                if start_day <= date.fromisoformat(day_key) <= today
+                and isinstance(record, dict)
+            ]
+            if not records:
+                return None, None, None, None
+
+            low = min(records, key=lambda item: float(item["low"]))
+            high = max(records, key=lambda item: float(item["high"]))
+            return (
+                float(low["low"]),
+                str(low["low_time"]),
+                float(high["high"]),
+                str(high["high_time"]),
+            )
+
+        return (
+            period_extremes(month_start_local.date()),
+            period_extremes(first_day),
+            len(
+                [
+                    day_key
+                    for day_key in days
+                    if first_day <= date.fromisoformat(day_key) <= today
+                ]
+            ),
+            float(config["vat_rate"]),
+            "; ".join(errors[:3]) if errors else None,
+        )
 
     async def _statistics(
         self,
@@ -516,29 +871,67 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             "kW",
         )
 
-        (
-            price_low_month,
-            price_low_month_time,
-            price_high_month,
-            price_high_month_time,
-        ) = _price_extremes(
-            price_stats,
-            price_id,
-            dt_util.as_utc(month_start_local).timestamp(),
-            dt_util.as_utc(now).timestamp(),
+        price_records_source = "recorder_hourly"
+        price_record_days = 0
+        price_vat_rate: float | None = None
+        price_records_error: str | None = None
+
+        nordpool_records = (
+            await self._nordpool_price_extremes(
+                price_id,
+                year_start_local,
+                month_start_local,
+                now,
+            )
+            if price_id
+            else None
         )
 
-        (
-            price_low_year,
-            price_low_year_time,
-            price_high_year,
-            price_high_year_time,
-        ) = _price_extremes(
-            price_stats,
-            price_id,
-            price_start.timestamp(),
-            dt_util.as_utc(now).timestamp(),
-        )
+        if nordpool_records is not None:
+            (
+                month_extremes,
+                year_extremes,
+                price_record_days,
+                price_vat_rate,
+                price_records_error,
+            ) = nordpool_records
+            (
+                price_low_month,
+                price_low_month_time,
+                price_high_month,
+                price_high_month_time,
+            ) = month_extremes
+            (
+                price_low_year,
+                price_low_year_time,
+                price_high_year,
+                price_high_year_time,
+            ) = year_extremes
+            price_records_source = "nordpool_quarter_hour"
+        else:
+            (
+                price_low_month,
+                price_low_month_time,
+                price_high_month,
+                price_high_month_time,
+            ) = _price_extremes(
+                price_stats,
+                price_id,
+                dt_util.as_utc(month_start_local).timestamp(),
+                dt_util.as_utc(now).timestamp(),
+            )
+
+            (
+                price_low_year,
+                price_low_year_time,
+                price_high_year,
+                price_high_year_time,
+            ) = _price_extremes(
+                price_stats,
+                price_id,
+                price_start.timestamp(),
+                dt_util.as_utc(now).timestamp(),
+            )
 
         average_price_gross = (
             cost_gross / energy if cost_gross is not None and energy > 0 else None
@@ -608,6 +1001,10 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             price_hour_rows=(
                 len(price_stats.get(price_id, [])) if price_id else 0
             ),
+            price_records_source=price_records_source,
+            price_record_days=price_record_days,
+            price_vat_rate=price_vat_rate,
+            price_records_error=price_records_error,
             gross_cost_month_rows=(
                 len(month_stats.get(gross_total_id, []))
                 if gross_total_id
