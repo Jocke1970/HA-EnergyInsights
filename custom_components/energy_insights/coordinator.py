@@ -623,8 +623,10 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
     ] | None:
         """Return exact Nord Pool quarter-hour extrema with persistent backfill."""
         config = self._nordpool_config(entity_id)
-        if config is None or not self.hass.services.has_service("nordpool", "hourly"):
+        if config is None:
             return None
+
+        service_available = self.hass.services.has_service("nordpool", "hourly")
 
         cache_source = (
             f"{entity_id}|{config['area']}|{config['currency']}|"
@@ -645,17 +647,22 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
 
         errors: list[str] = []
         cache_changed = False
-        for index in range(0, len(missing), 6):
-            batch = missing[index : index + 6]
-            results = await asyncio.gather(
-                *(self._fetch_nordpool_day(day, config) for day in batch)
+        if service_available:
+            for index in range(0, len(missing), 6):
+                batch = missing[index : index + 6]
+                results = await asyncio.gather(
+                    *(self._fetch_nordpool_day(day, config) for day in batch)
+                )
+                for key, record, error in results:
+                    if record is not None:
+                        self._price_days[key] = record
+                        cache_changed = True
+                    elif error:
+                        errors.append(f"{key}: {error}")
+        elif missing:
+            errors.append(
+                "Nord Pool service not ready; using persisted quarter-hour cache"
             )
-            for key, record, error in results:
-                if record is not None:
-                    self._price_days[key] = record
-                    cache_changed = True
-                elif error:
-                    errors.append(f"{key}: {error}")
 
         if cache_changed:
             await self._save_price_cache()
