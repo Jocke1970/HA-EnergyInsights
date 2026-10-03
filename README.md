@@ -22,7 +22,7 @@ Beta builds are distributed only through HACS.
 
 1. Add `Jocke1970/HA-EnergyInsights` as a custom **Integration** repository if needed.
 2. Enable **Show beta versions** for Energy Insights.
-3. Install/update to `v2026.10.0b1`.
+3. Install/update to `v2026.10.0b2`.
 4. Restart Home Assistant.
 5. Add or reconfigure **Energy Insights** under **Settings → Devices & services**.
 
@@ -45,6 +45,8 @@ The current beta includes:
 - Nord Pool net price records for current month and year/history start
 - Recorder hourly `mean` statistics for Nord Pool measurement sensors
 - Recorder row diagnostics for Nord Pool statistics troubleshooting
+- Recorder `state` statistics for Nord Pool total-class sensors
+- Recorder-side power conversion to kW
 - 15-minute refresh
 - Swedish and English translations
 
