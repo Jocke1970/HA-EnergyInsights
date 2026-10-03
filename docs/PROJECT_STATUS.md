@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b9**
-- current HACS beta tag: **v2026.10.0b9**
+- current HACS beta release name: **2026.10.0b10**
+- current HACS beta tag: **v2026.10.0b10**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -165,6 +165,15 @@ Development version `2026.10.0b9` keeps the premium b8 composition but replaces 
 - average SEK/kWh is aligned on the right
 - the internal "card inside card" look is removed
 - narrow-column behavior is preserved without clipping
+
+## Footer contrast refinement
+
+Development version `2026.10.0b10` fixes low-contrast footer text on light themes:
+
+- source/update text uses readable primary-text contrast
+- source icon keeps the Energy Insights accent
+- frontend/backend version diagnostics use a red high-contrast badge
+- footer opacity is no longer reduced
 
 ## Temporary Home Assistant YAML
 
