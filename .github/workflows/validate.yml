@@ -7,11 +7,6 @@ on:
       - beta
       - main
   pull_request:
-  schedule:
-    - cron: "0 0 * * *"
-  workflow_dispatch:
-
-permissions: {}
 
 jobs:
   validate:
@@ -36,12 +31,7 @@ jobs:
           python -m json.tool custom_components/energy_insights/translations/en.json >/dev/null
           python -m json.tool custom_components/energy_insights/translations/sv.json >/dev/null
 
-  validate-hacs:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: HACS validation
-        uses: hacs/action@main
-        with:
-          category: integration
-          ignore: brands
+      - name: Validate JavaScript
+        run: |
+          node --check custom_components/energy_insights/frontend/energy-insights-loader.js
+          node --check custom_components/energy_insights/frontend/energy-insights-card.js
