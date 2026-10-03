@@ -2,11 +2,15 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current HACS beta:** **2026-10 / v2026.10.0b1**
+> **Current HACS beta:** **2026.10.0b3 / v2026.10.0b3**
+
+## Goal
+
+Energy Insights replaces legacy Home Assistant YAML statistics logic with a Python backend and, next, a dedicated dashboard card.
 
 ## Versioning from next beta
 
-The legacy `0.1.0-beta.5` release was the final beta using the old version format.
+The current `0.1.0-beta.5` release is the final legacy-version beta.
 
 Starting with the next beta, Energy Insights uses calendar-based PEP 440 versions:
 
@@ -16,39 +20,45 @@ Starting with the next beta, Energy Insights uses calendar-based PEP 440 version
 
 Git tags use the same version prefixed with `v`, for example `v2026.10.0b1`.
 
-## Installation — HACS beta
+## Branch workflow
 
-Beta builds are distributed only through HACS.
+- `dev` — active development
+- `beta` — HACS beta / release candidate
+- `main` — stable only
+- beta releases — GitHub prereleases
+- stable releases — GitHub releases
 
-1. Add `Jocke1970/HA-EnergyInsights` as a custom **Integration** repository if needed.
-2. Enable **Show beta versions** for Energy Insights.
-3. Install/update to `v2026.10.0b2`.
-4. Restart Home Assistant.
-5. Add or reconfigure **Energy Insights** under **Settings → Devices & services**.
+## Current backend
 
-No manual beta installer is shipped on the `beta` branch.
-
-## 2026-10
-
-The current beta includes:
+The Python integration currently provides:
 
 - UI config flow and reconfiguration
-- energy/power source filtering
+- device-class filtering for energy and power sources
 - live-state entity picker for the Nord Pool price source
 - configurable history start
-- period selector limited to configured history
-- Recorder-backed period energy and cost statistics
-- weighted gross/net price
-- average daily usage and high/low consumption day
+- dynamic month/year period selector
+- Recorder long-term statistics queries
+- selected-period energy, gross/net cost and weighted prices
+- average daily use and high/low consumption day
+- incomplete current-day buckets are excluded from daily averages/extremes
 - peak power normalized to kW
-- optional live current-month utility-meter values
-- Nord Pool net price records for current month and year/history start
-- Recorder hourly `mean` statistics for Nord Pool measurement sensors
-- Recorder row diagnostics for Nord Pool statistics troubleshooting
-- Recorder `state` statistics for Nord Pool total-class sensors
+- current-month live utility-meter overrides
+- Nord Pool net price records for month and year/history start
+- Recorder `state` handling for Nord Pool total-class statistics
+- Recorder `mean`/`min`/`max` fallback for measurement-class price sensors
 - Recorder-side power conversion to kW
-- 15-minute refresh
+- 15-minute coordinator refresh
 - Swedish and English translations
+
+## Dev runtime testing
+
+From a Home Assistant terminal:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Jocke1970/HA-EnergyInsights/dev/scripts/install_dev.sh | sh
+```
+
+The dev installer is only for development testing. HACS beta builds are installed from the `beta` prerelease channel.
 
 ## Reference configuration
 
@@ -64,11 +74,11 @@ The current beta includes:
 | Current month net cost | `sensor.elkostnad_denna_manad_netto` |
 | History start | `2026-09-01` |
 
-See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the migration map and verified September reference.
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the ownership/migration map and verified reference values.
 
 ## Next milestone
 
-Verify month/year Nord Pool records in beta, migrate the Lovelace card to Energy Insights, then move monthly archive persistence into Python.
+Verify the 2026-10 beta price records, then move the dashboard to the dedicated Energy Insights card and continue the monthly archive migration.
 
 ## License
 
