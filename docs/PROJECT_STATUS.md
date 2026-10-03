@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b2**
-- current HACS beta tag: **v2026.10.0b2**
+- current HACS beta release name: **2026.10.0b3**
+- current HACS beta tag: **v2026.10.0b3**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -68,6 +68,24 @@ Nord Pool TOTAL-class statistics use Recorder `state`; measurement-class price s
 - Lowest day: 7.66 kWh on 2026-09-15
 - Peak: 4.84 kW on 2026-09-06 11:00
 
+## Verified 2026.10.0b3 runtime
+
+Runtime verification on 2026-10-03 confirmed:
+
+- Recorder status: `ok`
+- completed-day filtering works; current partial day is excluded
+- lowest completed day: 7.66 kWh on 2026-09-15
+- highest day: 42.95 kWh on 2026-09-04
+- peak power: 4.84 kW on 2026-09-06 11:00
+- current-month Nord Pool low: 0.16 SEK/kWh on 2026-10-02 01:00
+- current-month Nord Pool high: 2.04 SEK/kWh on 2026-10-01 08:00
+- year/history-start Nord Pool low: -0.02 SEK/kWh on 2026-09-19 13:00
+- year/history-start Nord Pool high: 3.36 SEK/kWh on 2026-09-23 08:00
+- Recorder price rows expose `state` for this Nord Pool total-class sensor
+- Recorder power statistics are normalized to kW
+
+The statistics backend is ready for the dedicated dashboard card.
+
 ## Temporary Home Assistant YAML
 
 The following remain outside this repository until Python replacements are finished:
@@ -81,7 +99,7 @@ Do not add new period-statistics or price-record logic to YAML.
 
 ## Next milestones
 
-1. Verify `2026.10.0b3` completed-day handling and Nord Pool records in Home Assistant.
+1. Build and migrate the Energy Insights JavaScript card.
 2. Build/migrate the Energy Insights JavaScript card.
 3. Remove the legacy YAML period selector after the old card no longer depends on it.
 4. Move monthly archive persistence into Python.
