@@ -1,0 +1,12 @@
+# Energy Insights first-party Lovelace card
+#
+# The JavaScript card is bundled with the integration and auto-loaded.
+# No manual Lovelace resource or Mushroom dependency is required.
+
+type: custom:energy-insights-card
+period_entity: select.period
+statistics_entity: sensor.statistik
+
+# Optional:
+# title: Energy Insights
+# show_price_records: true

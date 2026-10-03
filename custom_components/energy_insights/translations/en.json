@@ -13,7 +13,8 @@
           "current_month_energy": "Current month energy",
           "current_month_cost_gross": "Current month gross cost",
           "current_month_cost_net": "Current month net cost",
-          "history_start": "History starts"
+          "history_start": "History starts",
+          "price_net": "Net Nord Pool price"
         },
         "data_description": {
           "energy_total": "A cumulative energy sensor used by the Energy dashboard, normally in kWh.",
@@ -23,7 +24,8 @@
           "current_month_energy": "Optional live monthly energy sensor, for example a monthly utility meter.",
           "current_month_cost_gross": "Optional live monthly gross cost sensor.",
           "current_month_cost_net": "Optional live monthly net cost sensor.",
-          "history_start": "First month to include in the period selector."
+          "history_start": "First month to include in the period selector.",
+          "price_net": "Optional entity ID for electricity price excluding tax and VAT, for example sensor.nordpool_kwh_se3_sek_2_10_025. Used for monthly and yearly price records."
         }
       },
       "reconfigure": {
@@ -37,13 +39,17 @@
           "current_month_energy": "Current month energy",
           "current_month_cost_gross": "Current month gross cost",
           "current_month_cost_net": "Current month net cost",
-          "history_start": "History starts"
+          "history_start": "History starts",
+          "price_net": "Net Nord Pool price"
         }
       }
     },
     "abort": {
       "single_instance_allowed": "Only one Energy Insights instance can be configured.",
       "reconfigure_successful": "Energy Insights was reconfigured successfully."
+    },
+    "error": {
+      "entity_not_found": "The entity does not exist in Home Assistant."
     }
   },
   "entity": {

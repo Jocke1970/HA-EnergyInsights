@@ -2,8 +2,12 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Stable status:** no stable release has been published yet.  
-> **Current HACS beta:** **2026-10 / v0.1.0-beta.5**
+> **Development branch:** `2026.10.0b12`  
+> **Current HACS beta:** **2026.10.0b11 / v2026.10.0b11**
+
+## Goal
+
+Energy Insights replaces legacy Home Assistant YAML statistics logic with a Python backend and, next, a dedicated dashboard card.
 
 ## Versioning from next beta
 
@@ -17,27 +21,80 @@ Starting with the next beta, Energy Insights uses calendar-based PEP 440 version
 
 Git tags use the same version prefixed with `v`, for example `v2026.10.0b1`.
 
-## Branch purpose
+## Branch workflow
 
-`main` is reserved for stable code. The active release candidate is developed through:
+- `dev` — active development
+- `beta` — HACS beta / release candidate
+- `main` — stable only
+- beta releases — GitHub prereleases
+- stable releases — GitHub releases
 
-`dev → beta → main`
+## Current backend
 
-Until the first stable `v0.1.0` promotion, use the HACS beta channel rather than treating the current contents of `main` as the latest test build.
+The Python integration currently provides:
 
-## Current beta capabilities
+- UI config flow and reconfiguration
+- device-class filtering for energy and power sources
+- live-state entity picker for the Nord Pool price source
+- configurable history start
+- dynamic month/year period selector
+- Recorder long-term statistics queries
+- selected-period energy, gross/net cost and weighted prices
+- average daily use and high/low consumption day
+- incomplete current-day buckets are excluded from daily averages/extremes
+- peak power normalized to kW
+- current-month live utility-meter overrides
+- Nord Pool price records for month and year/history start
+- exact quarter-hour Nord Pool history with persistent daily-extrema cache when the selected source is the Nord Pool custom integration
+- today's price records only include elapsed quarter-hours; future published quarter-hours are excluded
+- startup-safe Nord Pool ordering via optional `after_dependencies`, with persistent quarter-hour cache retained if the Nord Pool action is temporarily unavailable
+- Recorder `state` handling for Nord Pool total-class statistics
+- Recorder `mean`/`min`/`max` fallback for measurement-class price sensors
+- Recorder-side power conversion to kW
+- 15-minute coordinator refresh
+- Swedish and English translations
 
-The 2026-10 beta provides Recorder-backed period statistics, current-month live totals, daily extrema, peak power, and Nord Pool net price records for month and year/history start.
+## Dev runtime testing
 
-Nord Pool price records are based on Recorder hourly `mean` statistics for measurement sensors.
+From a Home Assistant terminal:
 
-## Installation
+```sh
+curl -fsSL https://raw.githubusercontent.com/Jocke1970/HA-EnergyInsights/dev/scripts/install_dev.sh | sh
+```
 
-For current testing, enable beta versions in HACS and install **2026-10 / v0.1.0-beta.5**.
+The dev installer is only for development testing. HACS beta builds are installed from the `beta` prerelease channel.
 
-## Documentation
+## Reference configuration
 
-See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the current ownership map, source entities, verified September reference values and migration milestones.
+| Field | Entity |
+|---|---|
+| Cumulative energy | `sensor.develco_zhemi101_summering_av_leverans` |
+| Current power | `sensor.develco_zhemi101_momentan_efterfragan` |
+| Nord Pool net price | `sensor.nordpool_kwh_se3_sek_2_10_025` |
+| Cumulative gross cost | `sensor.elkostnad_total_brutto` |
+| Cumulative net cost | `sensor.elkostnad_total_netto` |
+| Current month energy | `sensor.hushallsel_denna_manad` |
+| Current month gross cost | `sensor.elkostnad_denna_manad` |
+| Current month net cost | `sensor.elkostnad_denna_manad_netto` |
+| History start | `2026-09-01` |
+
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the ownership/migration map and verified reference values.
+
+## First-party dashboard card
+
+The Energy Insights card is bundled with the integration and auto-loaded by Home Assistant. No manual Lovelace resource or Mushroom dependency is required.
+
+```yaml
+type: custom:energy-insights-card
+period_entity: select.period
+statistics_entity: sensor.statistik
+```
+
+The bundled card uses a responsive premium layout with a consumption hero, stacked gross/net cost rows, collapsible detail accordions for consumption KPIs and Nord Pool records, with a compact consumption summary showing daily average and top power, source/status badges and a high-contrast diagnostic footer with red version emphasis.
+
+## Next milestone
+
+Runtime-test the bundled card in Home Assistant, then retire the legacy Lovelace/YAML period-statistics UI.
 
 ## License
 

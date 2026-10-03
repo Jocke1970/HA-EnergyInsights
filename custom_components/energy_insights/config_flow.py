@@ -21,6 +21,7 @@ from .const import (
     CONF_ENERGY_TOTAL,
     CONF_HISTORY_START,
     CONF_POWER,
+    CONF_PRICE_NET,
     DOMAIN,
     NAME,
 )
@@ -38,7 +39,20 @@ def _sensor_selector(
     )
 
 
-def _schema() -> probatio.Schema:
+def _price_selector(hass) -> selector.EntitySelector:
+    """Return a sensor selector backed by the live state machine."""
+    sensor_entities = sorted(
+        state.entity_id for state in hass.states.async_all("sensor")
+    )
+    return selector.EntitySelector(
+        selector.EntitySelectorConfig(
+            domain=Platform.SENSOR,
+            include_entities=sensor_entities,
+        )
+    )
+
+
+def _schema(hass) -> probatio.Schema:
     """Return the Energy Insights source schema."""
     return probatio.Schema(
         {
@@ -48,6 +62,7 @@ def _schema() -> probatio.Schema:
             probatio.Required(CONF_POWER): _sensor_selector(
                 SensorDeviceClass.POWER
             ),
+            probatio.Optional(CONF_PRICE_NET): _price_selector(hass),
             probatio.Optional(CONF_COST_GROSS_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_COST_NET_TOTAL): _sensor_selector(),
             probatio.Optional(CONF_CURRENT_MONTH_ENERGY): _sensor_selector(
@@ -78,7 +93,10 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(title=NAME, data=user_input)
 
-        return self.async_show_form(step_id="user", data_schema=_schema())
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_schema(self.hass),
+        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -95,7 +113,7 @@ class EnergyInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                _schema(),
+                _schema(self.hass),
                 dict(entry.data),
             ),
         )
