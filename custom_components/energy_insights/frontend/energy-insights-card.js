@@ -1,4 +1,4 @@
-const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b10";
+const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.0b11";
 
 class EnergyInsightsCard extends HTMLElement {
   constructor() {
@@ -7,6 +7,7 @@ class EnergyInsightsCard extends HTMLElement {
     this._config = null;
     this._hass = null;
     this._signature = "";
+    this._expanded = { stats: false, prices: false };
     this.shadowRoot.addEventListener("click", (event) => this._handleClick(event));
     this.shadowRoot.addEventListener("change", (event) => this._handleChange(event));
   }
@@ -18,7 +19,13 @@ class EnergyInsightsCard extends HTMLElement {
       period_entity: "select.period",
       statistics_entity: "sensor.statistik",
       show_price_records: true,
+      stats_expanded: false,
+      price_records_expanded: false,
       ...config,
+    };
+    this._expanded = {
+      stats: Boolean(this._config.stats_expanded),
+      prices: Boolean(this._config.price_records_expanded),
     };
     this._signature = "";
     this._render();
@@ -38,11 +45,16 @@ class EnergyInsightsCard extends HTMLElement {
       period_entity: "select.period",
       statistics_entity: "sensor.statistik",
       show_price_records: true,
+      stats_expanded: false,
+      price_records_expanded: false,
     };
   }
 
   getCardSize() {
-    return this._config?.show_price_records === false ? 7 : 11;
+    let size = 5;
+    if (this._expanded?.stats) size += 3;
+    if (this._config?.show_price_records !== false && this._expanded?.prices) size += 4;
+    return size;
   }
 
   _entity(entityId) {
@@ -211,7 +223,59 @@ class EnergyInsightsCard extends HTMLElement {
     );
   }
 
-  _priceRecords(attrs) {
+  _statsSummary(attrs) {
+    return (
+      this._formatNumber(attrs.average_kwh_per_day, 2) + " kWh/dag · " +
+      this._formatNumber(attrs.lowest_day_kwh, 2) + "–" +
+      this._formatNumber(attrs.highest_day_kwh, 2) + " kWh · " +
+      this._formatNumber(attrs.peak_power_kw, 2) + " kW peak"
+    );
+  }
+
+  _priceSummary(attrs) {
+    return (
+      this._formatNumber(attrs.price_low_month_sek_kwh, 3) + "–" +
+      this._formatNumber(attrs.price_high_month_sek_kwh, 3) + " kr/kWh"
+    );
+  }
+
+  _accordion(section, eyebrow, title, summary, body, badges = "") {
+    const expanded = Boolean(this._expanded?.[section]);
+    return (
+      '<section class="accordion ' + (expanded ? "open" : "") + '">' +
+        '<button class="accordion-head" type="button" data-action="toggle-section" data-section="' + section + '" aria-expanded="' + expanded + '">' +
+          '<span class="accordion-title">' +
+            '<span class="eyebrow">' + this._escape(eyebrow) + '</span>' +
+            '<strong>' + this._escape(title) + '</strong>' +
+          '</span>' +
+          '<span class="accordion-summary">' + this._escape(summary) + '</span>' +
+          badges +
+          '<ha-icon class="accordion-chevron" icon="mdi:chevron-down"></ha-icon>' +
+        '</button>' +
+        (expanded ? '<div class="accordion-body">' + body + '</div>' : "") +
+      '</section>'
+    );
+  }
+
+  _statsAccordion(attrs) {
+    const body =
+      '<div class="stats-grid">' +
+        this._stat("mdi:calendar-today", "Snitt / dag", this._formatNumber(attrs.average_kwh_per_day, 2) + " kWh", "", "accent") +
+        this._stat("mdi:trending-up", "Högsta dygn", this._formatNumber(attrs.highest_day_kwh, 2) + " kWh", this._formatDate(attrs.highest_day_date, true), "high") +
+        this._stat("mdi:trending-down", "Lägsta dygn", this._formatNumber(attrs.lowest_day_kwh, 2) + " kWh", this._formatDate(attrs.lowest_day_date, true), "low") +
+        this._stat("mdi:flash", "Toppeffekt", this._formatNumber(attrs.peak_power_kw, 2) + " kW", this._formatDateTime(attrs.peak_power_time), "peak") +
+      '</div>';
+
+    return this._accordion(
+      "stats",
+      "Förbrukningsprofil",
+      "Nyckeltal",
+      this._statsSummary(attrs),
+      body
+    );
+  }
+
+  _priceAccordion(attrs) {
     if (this._config?.show_price_records === false) return "";
 
     const start = this._historyStart(attrs);
@@ -221,46 +285,59 @@ class EnergyInsightsCard extends HTMLElement {
       ? this._formatNumber(attrs.price_record_days, 0) + " dagar historik"
       : this._formatNumber(attrs.price_hour_rows, 0) + " timmar historik";
 
-    return (
-      '<section class="price-section">' +
-        '<div class="section-head">' +
-          '<div>' +
-            '<span class="eyebrow">Nord Pool</span>' +
-            '<h3>Prisrekord</h3>' +
-          "</div>" +
-          '<div class="price-badges">' +
-            '<span class="mini-badge">' + this._escape(sourceText) + "</span>" +
-            '<span class="mini-badge">' + this._escape(this._priceBasis(attrs)) + "</span>" +
-          "</div>" +
-        "</div>" +
-        '<div class="price-periods">' +
-          '<div class="price-period">' +
-            '<div class="price-period-head">' +
-              "<strong>Denna månad</strong>" +
-              '<span>' + this._escape(historyText) + "</span>" +
-            "</div>" +
-            '<div class="record-grid">' +
-              this._record("low", attrs.price_low_month_sek_kwh, attrs.price_low_month_time) +
-              this._record("high", attrs.price_high_month_sek_kwh, attrs.price_high_month_time) +
-            "</div>" +
-          "</div>" +
-          '<div class="price-period">' +
-            '<div class="price-period-head">' +
-              "<strong>Detta år</strong>" +
-              (start ? '<span>Från ' + this._escape(start) + "</span>" : "") +
-            "</div>" +
-            '<div class="record-grid">' +
-              this._record("low", attrs.price_low_year_sek_kwh, attrs.price_low_year_time) +
-              this._record("high", attrs.price_high_year_sek_kwh, attrs.price_high_year_time) +
-            "</div>" +
-          "</div>" +
-        "</div>" +
-      "</section>"
+    const badges =
+      '<span class="accordion-badges">' +
+        '<span class="mini-badge">' + this._escape(sourceText) + '</span>' +
+        '<span class="mini-badge">' + this._escape(this._priceBasis(attrs)) + '</span>' +
+      '</span>';
+
+    const body =
+      '<div class="price-periods">' +
+        '<div class="price-period">' +
+          '<div class="price-period-head">' +
+            '<strong>Denna månad</strong>' +
+            '<span>' + this._escape(historyText) + '</span>' +
+          '</div>' +
+          '<div class="record-grid">' +
+            this._record("low", attrs.price_low_month_sek_kwh, attrs.price_low_month_time) +
+            this._record("high", attrs.price_high_month_sek_kwh, attrs.price_high_month_time) +
+          '</div>' +
+        '</div>' +
+        '<div class="price-period">' +
+          '<div class="price-period-head">' +
+            '<strong>Detta år</strong>' +
+            (start ? '<span>Från ' + this._escape(start) + '</span>' : "") +
+          '</div>' +
+          '<div class="record-grid">' +
+            this._record("low", attrs.price_low_year_sek_kwh, attrs.price_low_year_time) +
+            this._record("high", attrs.price_high_year_sek_kwh, attrs.price_high_year_time) +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    return this._accordion(
+      "prices",
+      "Nord Pool",
+      "Prisrekord",
+      this._priceSummary(attrs),
+      body,
+      badges
     );
   }
 
   _handleClick(event) {
-    const action = event.target?.closest?.("[data-action]")?.dataset?.action;
+    const target = event.target?.closest?.("[data-action]");
+    const action = target?.dataset?.action;
+
+    if (action === "toggle-section") {
+      const section = target?.dataset?.section;
+      if (section === "stats" || section === "prices") {
+        this._expanded[section] = !this._expanded[section];
+        this._render();
+      }
+      return;
+    }
+
     if (action !== "more-info") return;
     const entityId = this._config?.statistics_entity;
     if (!entityId) return;
@@ -386,17 +463,8 @@ class EnergyInsightsCard extends HTMLElement {
           "</div>" +
         "</section>" +
 
-        '<section class="stats-section">' +
-          '<div class="section-head compact"><div><span class="eyebrow">Förbrukningsprofil</span><h3>Nyckeltal</h3></div></div>' +
-          '<div class="stats-grid">' +
-            this._stat("mdi:calendar-today", "Snitt / dag", this._formatNumber(attrs.average_kwh_per_day, 2) + " kWh", "", "accent") +
-            this._stat("mdi:trending-up", "Högsta dygn", this._formatNumber(attrs.highest_day_kwh, 2) + " kWh", this._formatDate(attrs.highest_day_date, true), "high") +
-            this._stat("mdi:trending-down", "Lägsta dygn", this._formatNumber(attrs.lowest_day_kwh, 2) + " kWh", this._formatDate(attrs.lowest_day_date, true), "low") +
-            this._stat("mdi:flash", "Toppeffekt", this._formatNumber(attrs.peak_power_kw, 2) + " kW", this._formatDateTime(attrs.peak_power_time), "peak") +
-          "</div>" +
-        "</section>" +
-
-        this._priceRecords(attrs) +
+        this._statsAccordion(attrs) +
+        this._priceAccordion(attrs) +
 
         '<footer class="footer">' +
           '<span class="footer-source">' +
@@ -424,19 +492,19 @@ class EnergyInsightsCard extends HTMLElement {
       '.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--divider-color) 80%,transparent);border-radius:16px;background:color-mix(in srgb,var(--primary-text-color) 2.4%,transparent)}.toolbar-copy{display:flex;align-items:center;gap:10px;min-width:0}.toolbar-copy>ha-icon{color:var(--ei-accent);--mdc-icon-size:20px}.toolbar-copy div{display:grid;gap:1px}.toolbar-copy span{font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:.07em;font-weight:700}.toolbar-copy strong{font-size:13px;font-weight:700;white-space:nowrap}' +
       '.select-wrap{position:relative;min-width:148px;max-width:210px;flex:0 1 210px}.select-wrap select{width:100%;appearance:none;-webkit-appearance:none;padding:9px 34px 9px 12px;border:0;border-radius:11px;outline:none;background:var(--card-background-color);color:var(--primary-text-color);font-weight:720;cursor:pointer;box-shadow:0 1px 0 color-mix(in srgb,var(--primary-text-color) 5%,transparent)}.select-wrap ha-icon{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;--mdc-icon-size:18px;color:var(--secondary-text-color)}' +
 
-      '.overview{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:12px;margin-bottom:20px}.energy-hero,.cost-panel{border-radius:20px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent)}.energy-hero{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:156px;padding:17px;text-align:left;border-color:color-mix(in srgb,var(--ei-accent) 22%,var(--divider-color));background:linear-gradient(150deg,color-mix(in srgb,var(--ei-accent) 14%,var(--card-background-color)),color-mix(in srgb,var(--ei-accent) 3%,var(--card-background-color)));color:var(--primary-text-color);cursor:pointer;transition:transform .16s ease,border-color .16s ease}.energy-hero:hover{border-color:color-mix(in srgb,var(--ei-accent) 52%,var(--divider-color))}.energy-hero:active{transform:scale(.993)}.hero-top{display:flex;align-items:center;gap:8px;color:var(--secondary-text-color);font-size:12px;font-weight:700}.hero-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--ei-accent) 15%,transparent);color:var(--ei-accent)}.hero-icon ha-icon{--mdc-icon-size:19px}.hero-number{display:flex;align-items:baseline;gap:6px;margin:8px 0 2px;font-size:31px;line-height:1;font-weight:800;letter-spacing:-.035em}.hero-number small{font-size:14px;font-weight:700;color:var(--secondary-text-color);letter-spacing:0}.hero-meta{font-size:11px;color:var(--secondary-text-color)}' +
+      '.overview{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:12px;margin-bottom:16px}.energy-hero,.cost-panel{border-radius:20px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent)}.energy-hero{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:156px;padding:17px;text-align:left;border-color:color-mix(in srgb,var(--ei-accent) 22%,var(--divider-color));background:linear-gradient(150deg,color-mix(in srgb,var(--ei-accent) 14%,var(--card-background-color)),color-mix(in srgb,var(--ei-accent) 3%,var(--card-background-color)));color:var(--primary-text-color);cursor:pointer;transition:transform .16s ease,border-color .16s ease}.energy-hero:hover{border-color:color-mix(in srgb,var(--ei-accent) 52%,var(--divider-color))}.energy-hero:active{transform:scale(.993)}.hero-top{display:flex;align-items:center;gap:8px;color:var(--secondary-text-color);font-size:12px;font-weight:700}.hero-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--ei-accent) 15%,transparent);color:var(--ei-accent)}.hero-icon ha-icon{--mdc-icon-size:19px}.hero-number{display:flex;align-items:baseline;gap:6px;margin:8px 0 2px;font-size:31px;line-height:1;font-weight:800;letter-spacing:-.035em}.hero-number small{font-size:14px;font-weight:700;color:var(--secondary-text-color);letter-spacing:0}.hero-meta{font-size:11px;color:var(--secondary-text-color)}' +
 
       '.cost-panel{padding:14px;background:color-mix(in srgb,var(--primary-text-color) 2.2%,transparent)}.cost-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 5px}.cost-head>span{font-size:12px;font-weight:760}.cost-head small{color:var(--secondary-text-color);font-size:10px}.cost-grid{display:grid;grid-template-columns:1fr;gap:0}.cost-item{display:flex;align-items:center;gap:10px;min-width:0;padding:11px 4px;border:0;border-radius:0;background:transparent;color:var(--primary-text-color);text-align:left;cursor:pointer;transition:transform .16s ease,background .16s ease}.cost-item+ .cost-item{border-top:1px solid color-mix(in srgb,var(--divider-color) 72%,transparent)}.cost-item:hover{background:color-mix(in srgb,var(--primary-text-color) 2.8%,transparent)}.cost-item:active{transform:scale(.995)}.cost-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:10px;background:color-mix(in srgb,var(--ei-accent) 11%,transparent);color:var(--ei-accent)}.cost-item.net .cost-icon{background:color-mix(in srgb,var(--ei-success) 11%,transparent);color:var(--ei-success)}.cost-icon ha-icon{--mdc-icon-size:18px}.cost-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label avg" "value avg";align-items:center;column-gap:12px;row-gap:2px;min-width:0;width:100%}.cost-copy>span{grid-area:label;font-size:10px;color:var(--secondary-text-color)}.cost-copy strong{grid-area:value;font-size:18px;line-height:1.05;white-space:nowrap;letter-spacing:-.02em}.cost-copy strong small{font-size:11px;font-weight:700}.cost-copy em{grid-area:avg;align-self:center;font-style:normal;font-size:10px;font-weight:650;color:var(--secondary-text-color);white-space:nowrap;text-align:right}' +
 
-      '.stats-section,.price-section{padding-top:18px;border-top:1px solid color-mix(in srgb,var(--divider-color) 85%,transparent)}.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:12px}.section-head.compact{margin-bottom:11px}.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{display:flex;align-items:center;gap:10px;min-height:76px;padding:12px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:16px;background:color-mix(in srgb,var(--primary-text-color) 1.9%,transparent);color:var(--primary-text-color);text-align:left;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease}.stat:hover{border-color:color-mix(in srgb,var(--ei-accent) 35%,var(--divider-color));background:color-mix(in srgb,var(--primary-text-color) 3.3%,transparent)}.stat:active{transform:scale(.993)}.stat-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:11px;background:color-mix(in srgb,var(--ei-accent) 10%,transparent);color:var(--ei-accent)}.stat-icon ha-icon{--mdc-icon-size:19px}.tone-high .stat-icon,.tone-peak .stat-icon{background:color-mix(in srgb,var(--ei-danger) 10%,transparent);color:var(--ei-danger)}.tone-low .stat-icon{background:color-mix(in srgb,var(--ei-info) 10%,transparent);color:var(--ei-info)}.stat-copy{display:grid;gap:2px;min-width:0}.stat-label{font-size:10px;color:var(--secondary-text-color)}.stat-value{font-size:17px;line-height:1.05;letter-spacing:-.02em}.stat-meta{font-size:10px;color:var(--secondary-text-color)}' +
+      '.accordion{border-top:1px solid color-mix(in srgb,var(--divider-color) 85%,transparent)}.accordion-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"title summary badges chevron";align-items:center;gap:10px;width:100%;padding:15px 2px;border:0;background:transparent;color:var(--primary-text-color);text-align:left;cursor:pointer}.accordion-head:hover .accordion-summary{color:var(--primary-text-color)}.accordion-title{grid-area:title;display:grid;gap:1px;min-width:0}.accordion-title .eyebrow{margin:0}.accordion-title strong{font-size:17px;line-height:1.08;letter-spacing:-.02em}.accordion-summary{grid-area:summary;color:var(--secondary-text-color);font-size:10px;font-weight:650;white-space:nowrap}.accordion-badges{grid-area:badges;display:flex;gap:5px;justify-content:flex-end}.accordion-chevron{grid-area:chevron;--mdc-icon-size:20px;color:var(--secondary-text-color);transition:transform .18s ease}.accordion.open .accordion-chevron{transform:rotate(180deg)}.accordion-body{padding:0 0 16px}.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{display:flex;align-items:center;gap:10px;min-height:76px;padding:12px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:16px;background:color-mix(in srgb,var(--primary-text-color) 1.9%,transparent);color:var(--primary-text-color);text-align:left;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease}.stat:hover{border-color:color-mix(in srgb,var(--ei-accent) 35%,var(--divider-color));background:color-mix(in srgb,var(--primary-text-color) 3.3%,transparent)}.stat:active{transform:scale(.993)}.stat-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:11px;background:color-mix(in srgb,var(--ei-accent) 10%,transparent);color:var(--ei-accent)}.stat-icon ha-icon{--mdc-icon-size:19px}.tone-high .stat-icon,.tone-peak .stat-icon{background:color-mix(in srgb,var(--ei-danger) 10%,transparent);color:var(--ei-danger)}.tone-low .stat-icon{background:color-mix(in srgb,var(--ei-info) 10%,transparent);color:var(--ei-info)}.stat-copy{display:grid;gap:2px;min-width:0}.stat-label{font-size:10px;color:var(--secondary-text-color)}.stat-value{font-size:17px;line-height:1.05;letter-spacing:-.02em}.stat-meta{font-size:10px;color:var(--secondary-text-color)}' +
 
-      '.price-section{margin-top:18px}.price-badges{display:flex;justify-content:flex-end;gap:5px;flex-wrap:wrap}.mini-badge{padding:5px 7px;border-radius:999px;background:color-mix(in srgb,var(--primary-text-color) 5%,transparent);color:var(--secondary-text-color);font-size:9px;font-weight:700;white-space:nowrap}.price-periods{display:grid;gap:14px}.price-period-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 7px}.price-period-head strong{font-size:13px}.price-period-head span{font-size:9px;color:var(--secondary-text-color)}.record-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.record{display:flex;align-items:center;gap:10px;min-height:72px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:15px;background:color-mix(in srgb,var(--primary-text-color) 1.7%,transparent);color:var(--primary-text-color);text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease}.record:hover{border-color:color-mix(in srgb,var(--ei-accent) 34%,var(--divider-color))}.record:active{transform:scale(.993)}.record-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:10px}.record.low .record-icon{background:color-mix(in srgb,var(--ei-success) 11%,transparent);color:var(--ei-success)}.record.high .record-icon{background:color-mix(in srgb,var(--ei-danger) 11%,transparent);color:var(--ei-danger)}.record-icon ha-icon{--mdc-icon-size:19px}.record-copy{display:grid;gap:1px;min-width:0}.record-label{font-size:9px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:.06em;font-weight:750}.record-copy strong{font-size:15px;line-height:1.1;letter-spacing:-.015em;white-space:nowrap}.record-time{font-size:9px;color:var(--secondary-text-color)}' +
+      '.accordion+.accordion{margin-top:0}.mini-badge{padding:5px 7px;border-radius:999px;background:color-mix(in srgb,var(--primary-text-color) 5%,transparent);color:var(--secondary-text-color);font-size:9px;font-weight:700;white-space:nowrap}.price-periods{display:grid;gap:14px}.price-period-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 7px}.price-period-head strong{font-size:13px}.price-period-head span{font-size:9px;color:var(--secondary-text-color)}.record-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.record{display:flex;align-items:center;gap:10px;min-height:72px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:15px;background:color-mix(in srgb,var(--primary-text-color) 1.7%,transparent);color:var(--primary-text-color);text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease}.record:hover{border-color:color-mix(in srgb,var(--ei-accent) 34%,var(--divider-color))}.record:active{transform:scale(.993)}.record-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:10px}.record.low .record-icon{background:color-mix(in srgb,var(--ei-success) 11%,transparent);color:var(--ei-success)}.record.high .record-icon{background:color-mix(in srgb,var(--ei-danger) 11%,transparent);color:var(--ei-danger)}.record-icon ha-icon{--mdc-icon-size:19px}.record-copy{display:grid;gap:1px;min-width:0}.record-label{font-size:9px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:.06em;font-weight:750}.record-copy strong{font-size:15px;line-height:1.1;letter-spacing:-.015em;white-space:nowrap}.record-time{font-size:9px;color:var(--secondary-text-color)}' +
 
       '.footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--divider-color) 80%,transparent);color:var(--primary-text-color);font-size:9px;font-weight:650;opacity:1}.footer-source{display:inline-flex;align-items:center;gap:4px;color:var(--primary-text-color)}.footer-source ha-icon{--mdc-icon-size:12px;color:var(--ei-accent)}.footer>span:not(.version){color:color-mix(in srgb,var(--primary-text-color) 78%,transparent)}.footer .version{margin-left:auto;padding:4px 7px;border-radius:999px;background:color-mix(in srgb,var(--ei-danger) 10%,transparent);color:var(--ei-danger);font-weight:800;letter-spacing:.01em}.loading,.error{min-height:90px;display:flex;align-items:center;gap:12px;padding:18px}.error ha-icon{color:var(--ei-danger)}.error div{display:grid;gap:3px}.error span{color:var(--secondary-text-color);font-size:12px}' +
 
-      '@media(max-width:680px){.energy-card{padding:17px}.header{margin-bottom:15px}.header h2{font-size:21px}.brand-icon{width:42px;height:42px;flex-basis:42px}.toolbar{padding:10px 11px}.overview{grid-template-columns:1fr}.energy-hero{min-height:126px}.hero-number{font-size:30px}.cost-panel{padding:12px}.stats-section{padding-top:16px}.price-section{margin-top:16px;padding-top:16px}}' +
-      '@media(max-width:430px){.energy-card{padding:15px;border-radius:20px}.header{gap:9px}.brand{gap:9px}.brand-icon{width:40px;height:40px;flex-basis:40px;border-radius:13px}.header h2{font-size:20px}.status{padding:7px 8px}.status span:last-child{display:none}.toolbar{align-items:stretch;flex-direction:column;gap:8px}.toolbar-copy{padding:0 2px}.select-wrap{max-width:none;min-width:0;flex:auto}.overview{gap:9px}.energy-hero{min-height:118px;padding:14px}.hero-number{font-size:29px}.cost-item{padding:10px 3px;gap:8px}.cost-icon{width:29px;height:29px;flex-basis:29px}.cost-copy{column-gap:8px}.cost-copy strong{font-size:17px}.cost-copy em{font-size:9px}.stats-grid{gap:7px}.stat{min-height:72px;padding:10px;gap:8px}.stat-icon{width:31px;height:31px;flex-basis:31px}.stat-value{font-size:16px}.section-head{align-items:flex-start}.price-badges{max-width:54%}.record-grid{gap:7px}.record{padding:10px 9px;gap:7px}.record-icon{width:29px;height:29px;flex-basis:29px}.record-copy strong{font-size:14px}.footer{gap:6px 9px}.footer .version{width:100%;margin-left:0}}' +
-      '@media(max-width:350px){.stats-grid,.record-grid{grid-template-columns:1fr}.cost-copy{grid-template-columns:1fr;grid-template-areas:"label" "value" "avg"}.cost-copy em{text-align:left}.price-badges{max-width:none;justify-content:flex-start}.section-head{flex-direction:column;gap:8px}}' +
+      '@media(max-width:680px){.energy-card{padding:17px}.header{margin-bottom:15px}.header h2{font-size:21px}.brand-icon{width:42px;height:42px;flex-basis:42px}.toolbar{padding:10px 11px}.overview{grid-template-columns:1fr}.energy-hero{min-height:126px}.hero-number{font-size:30px}.cost-panel{padding:12px}.accordion-head{padding:13px 2px}.accordion-body{padding-bottom:14px}}' +
+      '@media(max-width:430px){.energy-card{padding:15px;border-radius:20px}.header{gap:9px}.brand{gap:9px}.brand-icon{width:40px;height:40px;flex-basis:40px;border-radius:13px}.header h2{font-size:20px}.status{padding:7px 8px}.status span:last-child{display:none}.toolbar{align-items:stretch;flex-direction:column;gap:8px}.toolbar-copy{padding:0 2px}.select-wrap{max-width:none;min-width:0;flex:auto}.overview{gap:9px}.energy-hero{min-height:118px;padding:14px}.hero-number{font-size:29px}.cost-item{padding:10px 3px;gap:8px}.cost-icon{width:29px;height:29px;flex-basis:29px}.cost-copy{column-gap:8px}.cost-copy strong{font-size:17px}.cost-copy em{font-size:9px}.stats-grid{gap:7px}.stat{min-height:72px;padding:10px;gap:8px}.stat-icon{width:31px;height:31px;flex-basis:31px}.stat-value{font-size:16px}.accordion-head{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title chevron" "summary badges";row-gap:6px}.accordion-summary{white-space:normal}.accordion-badges{justify-content:flex-start}.record-grid{gap:7px}.record{padding:10px 9px;gap:7px}.record-icon{width:29px;height:29px;flex-basis:29px}.record-copy strong{font-size:14px}.footer{gap:6px 9px}.footer .version{width:100%;margin-left:0}}' +
+      '@media(max-width:350px){.stats-grid,.record-grid{grid-template-columns:1fr}.cost-copy{grid-template-columns:1fr;grid-template-areas:"label" "value" "avg"}.cost-copy em{text-align:left}.accordion-head{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title chevron" "summary summary" "badges badges"}.accordion-badges{justify-content:flex-start}}' +
       "</style>";
   }
 }
