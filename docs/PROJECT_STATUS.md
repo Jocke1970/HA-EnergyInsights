@@ -19,8 +19,8 @@ Git tags are prefixed with `v`, for example `v2026.10.0b1`.
 - `dev` — active development and direct runtime testing
 - `beta` — HACS beta / release candidate
 - `main` — stable branch; no stable `v0.1.0` release has been published yet
-- current HACS beta release name: **2026.10.0b10**
-- current HACS beta tag: **v2026.10.0b10**
+- current HACS beta release name: **2026.10.0b11**
+- current HACS beta tag: **v2026.10.0b11**
 
 The repository default branch is currently `beta`. Revisit that when the first stable release is promoted to `main`.
 
@@ -174,6 +174,17 @@ Development version `2026.10.0b10` fixes low-contrast footer text on light theme
 - source icon keeps the Energy Insights accent
 - frontend/backend version diagnostics use a red high-contrast badge
 - footer opacity is no longer reduced
+
+## Collapsible detail sections
+
+Development version `2026.10.0b11` tightens the default card height with two independent built-in accordions:
+
+- Förbrukningsprofil / Nyckeltal is collapsed by default with a compact KPI summary
+- Nord Pool / Prisrekord is collapsed by default with current-month low/high summary and 15-minute/VAT badges
+- either section can be expanded independently
+- open/closed state is retained across normal coordinator re-renders in the current browser card instance
+- no external expander-card dependency is required
+- optional config keys `stats_expanded` and `price_records_expanded` can change the initial state
 
 ## Temporary Home Assistant YAML
 

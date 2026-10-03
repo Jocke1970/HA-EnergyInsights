@@ -2,7 +2,7 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Current HACS beta:** **2026.10.0b10 / v2026.10.0b10**
+> **Current HACS beta:** **2026.10.0b11 / v2026.10.0b11**
 
 ## Goal
 
@@ -89,7 +89,7 @@ period_entity: select.period
 statistics_entity: sensor.statistik
 ```
 
-The bundled card uses a responsive premium layout with a consumption hero, stacked gross/net cost rows with aligned average prices, compact consumption KPIs, quarter-hour Nord Pool records, source/status badges and a high-contrast diagnostic footer with red version emphasis.
+The bundled card uses a responsive premium layout with a consumption hero, stacked gross/net cost rows, collapsible detail accordions for consumption KPIs and Nord Pool records, source/status badges and a high-contrast diagnostic footer with red version emphasis.
 
 ## Next milestone
 
