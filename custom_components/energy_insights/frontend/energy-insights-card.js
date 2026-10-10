@@ -1,4 +1,4 @@
-const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.1b1";
+const ENERGY_INSIGHTS_CARD_VERSION = "2026.10.1b2";
 
 class EnergyInsightsCard extends HTMLElement {
   constructor() {
