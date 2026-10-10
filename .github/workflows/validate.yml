@@ -47,7 +47,25 @@ jobs:
               Path("custom_components/energy_insights/manifest.json").read_text()
           )["version"]
           const = re.search(
-              r'^VERSION = "([^"]+)",
+              r'^VERSION = "([^"]+)"
+              Path("custom_components/energy_insights/const.py").read_text(),
+              re.MULTILINE,
+          ).group(1)
+          loader = re.search(
+              r'ENERGY_INSIGHTS_LOADER_VERSION = "([^"]+)"',
+              Path("custom_components/energy_insights/frontend/energy-insights-loader.js").read_text(),
+          ).group(1)
+          card = re.search(
+              r'ENERGY_INSIGHTS_CARD_VERSION = "([^"]+)"',
+              Path("custom_components/energy_insights/frontend/energy-insights-card.js").read_text(),
+          ).group(1)
+
+          versions = {"manifest": manifest, "const": const, "loader": loader, "card": card}
+          print(versions)
+          if len(set(versions.values())) != 1:
+              raise SystemExit("Energy Insights versions are out of sync")
+          PY
+
               Path("custom_components/energy_insights/const.py").read_text(),
               re.MULTILINE,
           ).group(1)
