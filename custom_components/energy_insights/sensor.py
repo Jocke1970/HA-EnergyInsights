@@ -110,4 +110,6 @@ class EnergyInsightsStatisticsSensor(
             "price_records_error": data.price_records_error,
             "gross_cost_month_rows": data.gross_cost_month_rows,
             "net_cost_month_rows": data.net_cost_month_rows,
+            "monthly_history": data.monthly_history,
+            "monthly_history_rows": len(data.monthly_history),
         }
