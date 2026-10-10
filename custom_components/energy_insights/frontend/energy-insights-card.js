@@ -561,6 +561,7 @@ class EnergyInsightsHistoryCard extends HTMLElement {
     this._config = {
       statistics_entity: "sensor.statistik",
       title: "Månadshistorik",
+      embedded: false,
       ...config,
     };
     this._signature = "";
@@ -742,9 +743,17 @@ class EnergyInsightsHistoryCard extends HTMLElement {
       ? rows.length + ' månader · från ' + this._fullMonth(rows[0].month)
       : 'Ingen historik ännu';
 
+    const embedded = Boolean(this._config.embedded);
+    const outerOpen = embedded ? '<div class="history-embedded">' : '<ha-card class="history-card">';
+    const outerClose = embedded ? '</div>' : '</ha-card>';
+    const header = embedded
+      ? ''
+      : '<header class="history-head"><div><span class="eyebrow">Energy Insights</span><h2>' +
+        this._config.title + '</h2></div><span class="row-count">' + rows.length + ' mån</span></header>';
+
     this.shadowRoot.innerHTML = '<style>' +
       ':host{display:block;color:var(--primary-text-color);--ei-accent:var(--primary-color,#03a9f4);--ei-success:var(--success-color,#43a047)}' +
-      '*{box-sizing:border-box}.history-card{padding:20px;border-radius:var(--ha-card-border-radius,24px);overflow:hidden;background:radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--ei-accent) 10%,transparent),transparent 32%),var(--card-background-color)}' +
+      '*{box-sizing:border-box}.history-card{padding:20px;border-radius:var(--ha-card-border-radius,24px);overflow:hidden;background:radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--ei-accent) 10%,transparent),transparent 32%),var(--card-background-color)}.history-embedded{display:block}' +
       '.history-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}.history-head div{display:grid;gap:2px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ei-accent)}h2{margin:0;font-size:21px;line-height:1.05}.row-count{font-size:10px;color:var(--secondary-text-color)}' +
       '.history-grid{display:grid;gap:12px}.history-panel{padding:14px 14px 8px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:18px;background:color-mix(in srgb,var(--primary-text-color) 1.8%,transparent)}' +
       '.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.panel-head>div{display:grid;gap:1px}.panel-head strong{font-size:15px}.panel-head span{font-size:10px;color:var(--secondary-text-color)}.legend{display:flex;align-items:center;gap:5px!important;white-space:nowrap}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:4px}.legend i.gross{background:var(--ei-accent)}.legend i.net{background:var(--ei-success)}' +
@@ -752,10 +761,9 @@ class EnergyInsightsHistoryCard extends HTMLElement {
       '.history-footer{display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--divider-color) 80%,transparent);color:var(--secondary-text-color);font-size:9px;font-weight:650}.history-footer ha-icon{--mdc-icon-size:12px;color:var(--ei-accent)}' +
       '.empty{min-height:130px;display:grid;place-items:center;align-content:center;gap:6px;text-align:center;color:var(--secondary-text-color)}.empty ha-icon{color:var(--ei-accent);--mdc-icon-size:28px}.empty strong{color:var(--primary-text-color)}.empty span{font-size:11px}' +
       '@media(max-width:430px){.history-card{padding:15px}.history-panel{padding:12px 10px 6px}.panel-head{flex-direction:column}.legend{margin-top:2px}.value-label{font-size:7px}.x-label{font-size:7px}}' +
-      '</style><ha-card class="history-card"><header class="history-head"><div><span class="eyebrow">Energy Insights</span><h2>' +
-      this._config.title + '</h2></div><span class="row-count">' + rows.length + ' mån</span></header><div class="history-grid">' +
+      '</style>' + outerOpen + header + '<div class="history-grid">' +
       body + '</div><footer class="history-footer"><ha-icon icon="mdi:calendar-range"></ha-icon><span>' +
-      scope + '</span></footer></ha-card>';
+      scope + '</span></footer>' + outerClose;
   }
 }
 
