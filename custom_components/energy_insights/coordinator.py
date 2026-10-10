@@ -906,38 +906,30 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             price_stats = {}
 
         is_current_month = self.selected_period == now.strftime("%Y-%m")
-
-        energy = (
-            self._state_number(
-                self.config_entry.data.get(CONF_CURRENT_MONTH_ENERGY)
-            )
-            if is_current_month
-            else None
+        current_month_key = now.strftime("%Y-%m")
+        current_month_energy = self._state_number(
+            self.config_entry.data.get(CONF_CURRENT_MONTH_ENERGY)
         )
+        current_month_cost_gross = self._state_number(
+            self.config_entry.data.get(CONF_CURRENT_MONTH_COST_GROSS)
+        )
+        current_month_cost_net = self._state_number(
+            self.config_entry.data.get(CONF_CURRENT_MONTH_COST_NET)
+        )
+
+        energy = current_month_energy if is_current_month else None
         if energy is None:
             energy = _sum_changes(month_stats, energy_id, start_ts, end_ts)
         if energy is None:
             energy = 0.0
 
-        cost_gross = (
-            self._state_number(
-                self.config_entry.data.get(CONF_CURRENT_MONTH_COST_GROSS)
-            )
-            if is_current_month
-            else None
-        )
+        cost_gross = current_month_cost_gross if is_current_month else None
         if cost_gross is None:
             cost_gross = _sum_changes(
                 month_stats, gross_total_id, start_ts, end_ts
             )
 
-        cost_net = (
-            self._state_number(
-                self.config_entry.data.get(CONF_CURRENT_MONTH_COST_NET)
-            )
-            if is_current_month
-            else None
-        )
+        cost_net = current_month_cost_net if is_current_month else None
         if cost_net is None:
             cost_net = _sum_changes(
                 month_stats, net_total_id, start_ts, end_ts
