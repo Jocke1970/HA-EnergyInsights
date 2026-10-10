@@ -507,8 +507,187 @@ class EnergyInsightsCard extends HTMLElement {
   }
 }
 
+
+class EnergyInsightsHistoryCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = null;
+    this._hass = null;
+    this._signature = "";
+  }
+
+  setConfig(config) {
+    this._config = {
+      statistics_entity: "sensor.statistik",
+      title: "Månadshistorik",
+      ...config,
+    };
+    this._signature = "";
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    const entity = hass?.states?.[this._config?.statistics_entity];
+    const rows = entity?.attributes?.monthly_history || [];
+    const next = [entity?.last_updated, JSON.stringify(rows)].join("|");
+    if (next !== this._signature) {
+      this._signature = next;
+      this._render();
+    }
+  }
+
+  getCardSize() {
+    return 9;
+  }
+
+  _number(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  _format(value, decimals = 2) {
+    const number = this._number(value);
+    if (number === null) return "–";
+    return new Intl.NumberFormat("sv-SE", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals,
+    }).format(number);
+  }
+
+  _month(value) {
+    const match = /^(\d{4})-(\d{2})$/.exec(String(value || ""));
+    if (!match) return String(value || "");
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1, 12);
+    return date.toLocaleDateString("sv-SE", { month: "short", year: "2-digit" });
+  }
+
+  _x(index, count) {
+    if (count <= 1) return 180;
+    return 30 + (index * 300) / (count - 1);
+  }
+
+  _barChart(rows, key, unit) {
+    const values = rows.map((row) => this._number(row[key]) ?? 0);
+    const max = Math.max(...values, 1);
+    const width = Math.max(12, Math.min(34, 230 / Math.max(rows.length, 1)));
+    const bars = rows.map((row, index) => {
+      const value = this._number(row[key]) ?? 0;
+      const height = (value / max) * 72;
+      const x = this._x(index, rows.length) - width / 2;
+      const y = 88 - height;
+      return '<g><rect class="bar primary" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) +
+        '" width="' + width.toFixed(1) + '" height="' + height.toFixed(1) + '" rx="4">' +
+        '<title>' + this._month(row.month) + ': ' + this._format(value, 2) + ' ' + unit + '</title></rect>' +
+        '<text class="x-label" x="' + this._x(index, rows.length).toFixed(1) + '" y="108">' +
+        this._month(row.month) + '</text></g>';
+    }).join("");
+    return '<svg viewBox="0 0 360 116" role="img"><line class="baseline" x1="22" y1="88" x2="338" y2="88"></line>' + bars + '</svg>';
+  }
+
+  _costChart(rows) {
+    const values = rows.flatMap((row) => [
+      this._number(row.cost_gross_sek) ?? 0,
+      this._number(row.cost_net_sek) ?? 0,
+    ]);
+    const max = Math.max(...values, 1);
+    const groupWidth = Math.max(18, Math.min(38, 220 / Math.max(rows.length, 1)));
+    const barWidth = groupWidth * 0.42;
+    const bars = rows.map((row, index) => {
+      const center = this._x(index, rows.length);
+      const gross = this._number(row.cost_gross_sek) ?? 0;
+      const net = this._number(row.cost_net_sek) ?? 0;
+      const gh = (gross / max) * 72;
+      const nh = (net / max) * 72;
+      return '<g>' +
+        '<rect class="bar gross" x="' + (center - barWidth - 1).toFixed(1) + '" y="' + (88 - gh).toFixed(1) +
+        '" width="' + barWidth.toFixed(1) + '" height="' + gh.toFixed(1) + '" rx="3"><title>' +
+        this._month(row.month) + ' brutto: ' + this._format(gross, 2) + ' kr</title></rect>' +
+        '<rect class="bar net" x="' + (center + 1).toFixed(1) + '" y="' + (88 - nh).toFixed(1) +
+        '" width="' + barWidth.toFixed(1) + '" height="' + nh.toFixed(1) + '" rx="3"><title>' +
+        this._month(row.month) + ' netto: ' + this._format(net, 2) + ' kr</title></rect>' +
+        '<text class="x-label" x="' + center.toFixed(1) + '" y="108">' + this._month(row.month) + '</text></g>';
+    }).join("");
+    return '<svg viewBox="0 0 360 116" role="img"><line class="baseline" x1="22" y1="88" x2="338" y2="88"></line>' + bars + '</svg>';
+  }
+
+  _priceChart(rows) {
+    const gross = rows.map((row) => this._number(row.avg_price_gross_sek_kwh));
+    const net = rows.map((row) => this._number(row.avg_price_net_sek_kwh));
+    const values = [...gross, ...net].filter((value) => value !== null);
+    const max = Math.max(...values, 1);
+    const y = (value) => 88 - ((value ?? 0) / max) * 72;
+    const path = (series) => series.map((value, index) =>
+      (index === 0 ? "M " : "L ") + this._x(index, rows.length).toFixed(1) + " " + y(value).toFixed(1)
+    ).join(" ");
+    const points = (series, className, label) => series.map((value, index) => {
+      if (value === null) return "";
+      const x = this._x(index, rows.length);
+      return '<circle class="point ' + className + '" cx="' + x.toFixed(1) + '" cy="' + y(value).toFixed(1) +
+        '" r="3.5"><title>' + this._month(rows[index].month) + ' ' + label + ': ' +
+        this._format(value, 3) + ' kr/kWh</title></circle>';
+    }).join("");
+    const labels = rows.map((row, index) =>
+      '<text class="x-label" x="' + this._x(index, rows.length).toFixed(1) + '" y="108">' +
+      this._month(row.month) + '</text>'
+    ).join("");
+    return '<svg viewBox="0 0 360 116" role="img"><line class="baseline" x1="22" y1="88" x2="338" y2="88"></line>' +
+      '<path class="line gross" d="' + path(gross) + '"></path>' +
+      '<path class="line net" d="' + path(net) + '"></path>' +
+      points(gross, "gross", "brutto") + points(net, "net", "netto") + labels + '</svg>';
+  }
+
+  _panel(title, subtitle, legend, chart) {
+    return '<section class="history-panel"><div class="panel-head"><div><strong>' + title +
+      '</strong><span>' + subtitle + '</span></div>' + legend + '</div>' + chart + '</section>';
+  }
+
+  _render() {
+    if (!this.shadowRoot || !this._config) return;
+    const entity = this._hass?.states?.[this._config.statistics_entity];
+    const rows = Array.isArray(entity?.attributes?.monthly_history)
+      ? entity.attributes.monthly_history
+      : [];
+
+    const body = rows.length
+      ? this._panel("Förbrukning per månad", "kWh", "", this._barChart(rows, "energy_kwh", "kWh")) +
+        this._panel(
+          "Elkostnad per månad",
+          "SEK",
+          '<span class="legend"><i class="gross"></i>Brutto <i class="net"></i>Netto</span>',
+          this._costChart(rows)
+        ) +
+        this._panel(
+          "Genomsnittspris per månad",
+          "SEK/kWh",
+          '<span class="legend"><i class="gross"></i>Brutto <i class="net"></i>Netto</span>',
+          this._priceChart(rows)
+        )
+      : '<div class="empty"><ha-icon icon="mdi:chart-line-variant"></ha-icon><strong>Ingen månadshistorik ännu</strong>' +
+        '<span>Energy Insights väntar på Recorder-data.</span></div>';
+
+    this.shadowRoot.innerHTML = '<style>' +
+      ':host{display:block;color:var(--primary-text-color);--ei-accent:var(--primary-color,#03a9f4);--ei-success:var(--success-color,#43a047)}' +
+      '*{box-sizing:border-box}.history-card{padding:20px;border-radius:var(--ha-card-border-radius,24px);overflow:hidden;background:radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--ei-accent) 10%,transparent),transparent 32%),var(--card-background-color)}' +
+      '.history-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}.history-head div{display:grid;gap:2px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ei-accent)}h2{margin:0;font-size:21px;line-height:1.05}.row-count{font-size:10px;color:var(--secondary-text-color)}' +
+      '.history-grid{display:grid;gap:12px}.history-panel{padding:14px 14px 8px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:18px;background:color-mix(in srgb,var(--primary-text-color) 1.8%,transparent)}' +
+      '.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.panel-head>div{display:grid;gap:1px}.panel-head strong{font-size:15px}.panel-head span{font-size:10px;color:var(--secondary-text-color)}.legend{display:flex;align-items:center;gap:5px!important;white-space:nowrap}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:4px}.legend i.gross{background:var(--ei-accent)}.legend i.net{background:var(--ei-success)}' +
+      'svg{display:block;width:100%;height:auto;margin-top:6px;overflow:visible}.baseline{stroke:var(--divider-color);stroke-width:1}.bar.primary,.bar.gross{fill:var(--ei-accent)}.bar.net{fill:var(--ei-success)}.bar{opacity:.78}.x-label{fill:var(--secondary-text-color);font-size:8px;text-anchor:middle}.line{fill:none;stroke-width:2.3;stroke-linejoin:round;stroke-linecap:round}.line.gross{stroke:var(--ei-accent)}.line.net{stroke:var(--ei-success)}.point.gross{fill:var(--ei-accent)}.point.net{fill:var(--ei-success)}' +
+      '.empty{min-height:130px;display:grid;place-items:center;align-content:center;gap:6px;text-align:center;color:var(--secondary-text-color)}.empty ha-icon{color:var(--ei-accent);--mdc-icon-size:28px}.empty strong{color:var(--primary-text-color)}.empty span{font-size:11px}' +
+      '@media(max-width:430px){.history-card{padding:15px}.history-panel{padding:12px 10px 6px}.panel-head{flex-direction:column}.legend{margin-top:2px}}' +
+      '</style><ha-card class="history-card"><header class="history-head"><div><span class="eyebrow">Energy Insights</span><h2>' +
+      this._config.title + '</h2></div><span class="row-count">' + rows.length + ' mån</span></header><div class="history-grid">' +
+      body + '</div></ha-card>';
+  }
+}
+
 if (!customElements.get("energy-insights-card")) {
   customElements.define("energy-insights-card", EnergyInsightsCard);
+}
+
+if (!customElements.get("energy-insights-history-card")) {
+  customElements.define("energy-insights-history-card", EnergyInsightsHistoryCard);
 }
 
 window.customCards = window.customCards || [];
@@ -517,6 +696,15 @@ if (!window.customCards.some((card) => card.type === "energy-insights-card")) {
     type: "energy-insights-card",
     name: "Energy Insights",
     description: "Electricity usage, cost, peak power and Nord Pool history.",
+    preview: true,
+  });
+}
+
+if (!window.customCards.some((card) => card.type === "energy-insights-history-card")) {
+  window.customCards.push({
+    type: "energy-insights-history-card",
+    name: "Energy Insights History",
+    description: "Monthly electricity usage, gross/net cost and average price history.",
     preview: true,
   });
 }
