@@ -7,7 +7,7 @@ class EnergyInsightsCard extends HTMLElement {
     this._config = null;
     this._hass = null;
     this._signature = "";
-    this._expanded = { stats: false, prices: false };
+    this._expanded = { stats: false, prices: false, history: false };
     this.shadowRoot.addEventListener("click", (event) => this._handleClick(event));
     this.shadowRoot.addEventListener("change", (event) => this._handleChange(event));
   }
@@ -21,11 +21,13 @@ class EnergyInsightsCard extends HTMLElement {
       show_price_records: true,
       stats_expanded: false,
       price_records_expanded: false,
+      history_expanded: false,
       ...config,
     };
     this._expanded = {
       stats: Boolean(this._config.stats_expanded),
       prices: Boolean(this._config.price_records_expanded),
+      history: Boolean(this._config.history_expanded),
     };
     this._signature = "";
     this._render();
@@ -47,6 +49,7 @@ class EnergyInsightsCard extends HTMLElement {
       show_price_records: true,
       stats_expanded: false,
       price_records_expanded: false,
+      history_expanded: false,
     };
   }
 
@@ -54,6 +57,7 @@ class EnergyInsightsCard extends HTMLElement {
     let size = 5;
     if (this._expanded?.stats) size += 3;
     if (this._config?.show_price_records !== false && this._expanded?.prices) size += 4;
+    if (this._expanded?.history) size += 9;
     return size;
   }
 
@@ -74,6 +78,7 @@ class EnergyInsightsCard extends HTMLElement {
       stats?.attributes?.backend_version,
       stats?.attributes?.price_records_source,
       stats?.attributes?.price_record_days,
+      JSON.stringify(stats?.attributes?.monthly_history || []),
     ].join("|");
   }
 
@@ -323,13 +328,35 @@ class EnergyInsightsCard extends HTMLElement {
     );
   }
 
+  _historyAccordion(attrs) {
+    const rows = Array.isArray(attrs.monthly_history) ? attrs.monthly_history : [];
+    const first = rows[0]?.month;
+    const last = rows[rows.length - 1]?.month;
+    const summary = rows.length
+      ? rows.length + " mån · " + this._periodLabel(first).replace(/^./, (char) => char.toLowerCase()) +
+        (last && last !== first ? "–" + this._periodLabel(last).replace(/^./, (char) => char.toLowerCase()) : "")
+      : "Ingen historik";
+
+    const body = rows.length
+      ? '<energy-insights-history-card class="history-inline"></energy-insights-history-card>'
+      : '<div class="history-empty"><ha-icon icon="mdi:chart-line-variant"></ha-icon><span>Ingen månadshistorik ännu</span></div>';
+
+    return this._accordion(
+      "history",
+      "Historik",
+      "Månadshistorik",
+      summary,
+      body
+    );
+  }
+
   _handleClick(event) {
     const target = event.target?.closest?.("[data-action]");
     const action = target?.dataset?.action;
 
     if (action === "toggle-section") {
       const section = target?.dataset?.section;
-      if (section === "stats" || section === "prices") {
+      if (section === "stats" || section === "prices" || section === "history") {
         this._expanded[section] = !this._expanded[section];
         this._render();
       }
@@ -463,6 +490,7 @@ class EnergyInsightsCard extends HTMLElement {
 
         this._statsAccordion(attrs) +
         this._priceAccordion(attrs) +
+        this._historyAccordion(attrs) +
 
         '<footer class="footer">' +
           '<span class="footer-source">' +
@@ -475,6 +503,17 @@ class EnergyInsightsCard extends HTMLElement {
             " · Backend " + this._escape(attrs.backend_version || "–") + "</span>" +
         "</footer>" +
       "</ha-card>";
+
+    if (this._expanded?.history) {
+      const historyCard = this.shadowRoot.querySelector("energy-insights-history-card.history-inline");
+      if (historyCard) {
+        historyCard.setConfig({
+          statistics_entity: this._config.statistics_entity,
+          embedded: true,
+        });
+        historyCard.hass = this._hass;
+      }
+    }
   }
 
   _styles() {
@@ -496,6 +535,7 @@ class EnergyInsightsCard extends HTMLElement {
 
       '.accordion{border-top:1px solid color-mix(in srgb,var(--divider-color) 85%,transparent)}.accordion-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"title summary badges chevron";align-items:center;gap:10px;width:100%;padding:15px 2px;border:0;background:transparent;color:var(--primary-text-color);text-align:left;cursor:pointer}.accordion-head:hover .accordion-summary{color:var(--primary-text-color)}.accordion-title{grid-area:title;display:grid;gap:1px;min-width:0}.accordion-title .eyebrow{margin:0}.accordion-title strong{font-size:17px;line-height:1.08;letter-spacing:-.02em}.accordion-summary{grid-area:summary;color:var(--secondary-text-color);font-size:10px;font-weight:650;white-space:nowrap}.accordion-badges{grid-area:badges;display:flex;gap:5px;justify-content:flex-end}.accordion-chevron{grid-area:chevron;--mdc-icon-size:20px;color:var(--secondary-text-color);transition:transform .18s ease}.accordion.open .accordion-chevron{transform:rotate(180deg)}.accordion-body{padding:0 0 16px}.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{display:flex;align-items:center;gap:10px;min-height:76px;padding:12px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:16px;background:color-mix(in srgb,var(--primary-text-color) 1.9%,transparent);color:var(--primary-text-color);text-align:left;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease}.stat:hover{border-color:color-mix(in srgb,var(--ei-accent) 35%,var(--divider-color));background:color-mix(in srgb,var(--primary-text-color) 3.3%,transparent)}.stat:active{transform:scale(.993)}.stat-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:11px;background:color-mix(in srgb,var(--ei-accent) 10%,transparent);color:var(--ei-accent)}.stat-icon ha-icon{--mdc-icon-size:19px}.tone-high .stat-icon,.tone-peak .stat-icon{background:color-mix(in srgb,var(--ei-danger) 10%,transparent);color:var(--ei-danger)}.tone-low .stat-icon{background:color-mix(in srgb,var(--ei-info) 10%,transparent);color:var(--ei-info)}.stat-copy{display:grid;gap:2px;min-width:0}.stat-label{font-size:10px;color:var(--secondary-text-color)}.stat-value{font-size:17px;line-height:1.05;letter-spacing:-.02em}.stat-meta{font-size:10px;color:var(--secondary-text-color)}' +
 
+      '.history-inline{display:block}.history-empty{display:flex;align-items:center;justify-content:center;gap:8px;min-height:88px;color:var(--secondary-text-color);font-size:11px}.history-empty ha-icon{color:var(--ei-accent);--mdc-icon-size:22px}' +
       '.accordion+.accordion{margin-top:0}.mini-badge{padding:5px 7px;border-radius:999px;background:color-mix(in srgb,var(--primary-text-color) 5%,transparent);color:var(--secondary-text-color);font-size:9px;font-weight:700;white-space:nowrap}.price-periods{display:grid;gap:14px}.price-period-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 7px}.price-period-head strong{font-size:13px}.price-period-head span{font-size:9px;color:var(--secondary-text-color)}.record-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.record{display:flex;align-items:center;gap:10px;min-height:72px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent);border-radius:15px;background:color-mix(in srgb,var(--primary-text-color) 1.7%,transparent);color:var(--primary-text-color);text-align:left;cursor:pointer;transition:transform .16s ease,border-color .16s ease}.record:hover{border-color:color-mix(in srgb,var(--ei-accent) 34%,var(--divider-color))}.record:active{transform:scale(.993)}.record-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:10px}.record.low .record-icon{background:color-mix(in srgb,var(--ei-success) 11%,transparent);color:var(--ei-success)}.record.high .record-icon{background:color-mix(in srgb,var(--ei-danger) 11%,transparent);color:var(--ei-danger)}.record-icon ha-icon{--mdc-icon-size:19px}.record-copy{display:grid;gap:1px;min-width:0}.record-label{font-size:9px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:.06em;font-weight:750}.record-copy strong{font-size:15px;line-height:1.1;letter-spacing:-.015em;white-space:nowrap}.record-time{font-size:9px;color:var(--secondary-text-color)}' +
 
       '.footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--divider-color) 80%,transparent);color:var(--primary-text-color);font-size:9px;font-weight:650;opacity:1}.footer-source{display:inline-flex;align-items:center;gap:4px;color:var(--primary-text-color)}.footer-source ha-icon{--mdc-icon-size:12px;color:var(--ei-accent)}.footer>span:not(.version){color:color-mix(in srgb,var(--primary-text-color) 78%,transparent)}.footer .version{margin-left:auto;padding:4px 7px;border-radius:999px;background:color-mix(in srgb,var(--ei-danger) 10%,transparent);color:var(--ei-danger);font-weight:800;letter-spacing:.01em}.loading,.error{min-height:90px;display:flex;align-items:center;gap:12px;padding:18px}.error ha-icon{color:var(--ei-danger)}.error div{display:grid;gap:3px}.error span{color:var(--secondary-text-color);font-size:12px}' +
