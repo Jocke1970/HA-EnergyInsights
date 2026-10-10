@@ -1029,6 +1029,19 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 dt_util.as_utc(now).timestamp(),
             )
 
+        monthly_history = _monthly_history(
+            history_stats,
+            energy_id,
+            gross_total_id,
+            net_total_id,
+            dt_util.as_utc(self.history_start).timestamp(),
+            dt_util.as_utc(now).timestamp(),
+            current_month_key,
+            current_month_energy,
+            current_month_cost_gross,
+            current_month_cost_net,
+        )
+
         average_price_gross = (
             cost_gross / energy if cost_gross is not None and energy > 0 else None
         )
@@ -1111,4 +1124,5 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 if net_total_id
                 else 0
             ),
+            monthly_history=monthly_history,
         )
