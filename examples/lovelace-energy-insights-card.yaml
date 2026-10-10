@@ -2,6 +2,8 @@
 #
 # The JavaScript card is bundled with the integration and auto-loaded.
 # No manual Lovelace resource or Mushroom dependency is required.
+#
+# Monthly history is built into the main card as the last accordion.
 
 type: custom:energy-insights-card
 period_entity: select.period
@@ -10,8 +12,6 @@ statistics_entity: sensor.statistik
 # Optional:
 # title: Energy Insights
 # show_price_records: true
-
-# Monthly history (replaces the three legacy statistics-graph cards):
-# type: custom:energy-insights-history-card
-# statistics_entity: sensor.statistik
-# title: Månadshistorik
+# stats_expanded: false
+# price_records_expanded: false
+# history_expanded: false
