@@ -859,6 +859,13 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
                 "month",
                 {"change"},
             )
+            history_stats = await self._statistics(
+                month_stat_ids,
+                dt_util.as_utc(self.history_start),
+                dt_util.as_utc(now),
+                "month",
+                {"change"},
+            )
             day_stats = await self._statistics(
                 {energy_id},
                 start,
@@ -893,6 +900,7 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             recorder_error = f"{type(err).__name__}: {err}"
             _LOGGER.exception("Unable to read Recorder statistics")
             month_stats = {}
+            history_stats = {}
             day_stats = {}
             power_stats = {}
             price_stats = {}
