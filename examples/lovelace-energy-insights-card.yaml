@@ -10,3 +10,8 @@ statistics_entity: sensor.statistik
 # Optional:
 # title: Energy Insights
 # show_price_records: true
+
+# Monthly history (replaces the three legacy statistics-graph cards):
+# type: custom:energy-insights-history-card
+# statistics_entity: sensor.statistik
+# title: Månadshistorik
