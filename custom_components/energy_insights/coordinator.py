@@ -127,6 +127,7 @@ class EnergyInsightsData:
     price_records_error: str | None
     gross_cost_month_rows: int
     net_cost_month_rows: int
+    monthly_history: list[dict[str, Any]]
 
 
 def _history_start(value: str) -> datetime:
