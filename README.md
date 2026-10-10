@@ -2,8 +2,8 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Development branch:** `2026.10.0b12`  
-> **Current HACS beta:** **2026.10.0b11 / v2026.10.0b11**
+> **Development branch:** `2026.10.1b1`  
+> **Latest stable:** **2026.10.0 / v2026.10.0**
 
 ## Goal
 
@@ -91,6 +91,16 @@ statistics_entity: sensor.statistik
 ```
 
 The bundled card uses a responsive premium layout with a consumption hero, stacked gross/net cost rows, collapsible detail accordions for consumption KPIs and Nord Pool records, with a compact consumption summary showing daily average and top power, source/status badges and a high-contrast diagnostic footer with red version emphasis.
+
+A second bundled first-party card renders normalized monthly history directly from the Python backend:
+
+```yaml
+type: custom:energy-insights-history-card
+statistics_entity: sensor.statistik
+title: Månadshistorik
+```
+
+It replaces the legacy monthly `statistics-graph` cards for consumption, gross/net cost and weighted average price.
 
 ## Next milestone
 
