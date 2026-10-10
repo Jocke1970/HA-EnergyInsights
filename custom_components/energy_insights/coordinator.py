@@ -213,6 +213,93 @@ def _sum_changes(
     return total if found else None
 
 
+def _monthly_history(
+    result: dict[str, list[dict[str, Any]]],
+    energy_id: str,
+    gross_id: str | None,
+    net_id: str | None,
+    start_ts: float,
+    end_ts: float,
+    current_month: str,
+    current_energy: float | None,
+    current_gross: float | None,
+    current_net: float | None,
+) -> list[dict[str, Any]]:
+    """Build one normalized row per month for the dashboard history charts."""
+    rows: dict[str, dict[str, float | str | None]] = {}
+
+    def add_series(entity_id: str | None, key: str) -> None:
+        if not entity_id:
+            return
+        for row in result.get(entity_id, []):
+            row_start = float(row.get("start", 0))
+            value = row.get("change")
+            if not (start_ts <= row_start < end_ts) or value is None:
+                continue
+            local_start = dt_util.as_local(dt_util.utc_from_timestamp(row_start))
+            month = local_start.strftime("%Y-%m")
+            item = rows.setdefault(
+                month,
+                {
+                    "month": month,
+                    "energy_kwh": None,
+                    "cost_gross_sek": None,
+                    "cost_net_sek": None,
+                },
+            )
+            item[key] = round(float(value), 3)
+
+    add_series(energy_id, "energy_kwh")
+    add_series(gross_id, "cost_gross_sek")
+    add_series(net_id, "cost_net_sek")
+
+    current = rows.setdefault(
+        current_month,
+        {
+            "month": current_month,
+            "energy_kwh": None,
+            "cost_gross_sek": None,
+            "cost_net_sek": None,
+        },
+    )
+    if current_energy is not None:
+        current["energy_kwh"] = round(current_energy, 3)
+    if current_gross is not None:
+        current["cost_gross_sek"] = round(current_gross, 2)
+    if current_net is not None:
+        current["cost_net_sek"] = round(current_net, 2)
+
+    normalized: list[dict[str, Any]] = []
+    for month in sorted(rows):
+        item = rows[month]
+        energy = item.get("energy_kwh")
+        gross = item.get("cost_gross_sek")
+        net = item.get("cost_net_sek")
+        energy_value = float(energy) if energy is not None else None
+        gross_value = float(gross) if gross is not None else None
+        net_value = float(net) if net is not None else None
+        normalized.append(
+            {
+                "month": month,
+                "energy_kwh": round(energy_value, 3) if energy_value is not None else None,
+                "cost_gross_sek": round(gross_value, 2) if gross_value is not None else None,
+                "cost_net_sek": round(net_value, 2) if net_value is not None else None,
+                "avg_price_gross_sek_kwh": (
+                    round(gross_value / energy_value, 4)
+                    if gross_value is not None and energy_value and energy_value > 0
+                    else None
+                ),
+                "avg_price_net_sek_kwh": (
+                    round(net_value / energy_value, 4)
+                    if net_value is not None and energy_value and energy_value > 0
+                    else None
+                ),
+            }
+        )
+
+    return normalized
+
+
 def _daily_extremes(
     result: dict[str, list[dict[str, Any]]],
     statistic_id: str,
