@@ -7,6 +7,7 @@ from typing import override
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import UnitOfEnergy
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import EnergyInsightsConfigEntry
@@ -20,6 +21,18 @@ async def async_setup_entry(
     async_add_entities,
 ) -> None:
     """Set up Energy Insights sensor entities."""
+    registry = er.async_get(hass)
+    current_entity_id = registry.async_get_entity_id(
+        "sensor", DOMAIN, STATISTICS_SENSOR_UNIQUE_ID
+    )
+    target_entity_id = "sensor.energy_insights_statistik"
+    if current_entity_id and current_entity_id != target_entity_id:
+        if registry.async_get(target_entity_id) is None:
+            registry.async_update_entity(
+                current_entity_id,
+                new_entity_id=target_entity_id,
+            )
+
     async_add_entities([EnergyInsightsStatisticsSensor(entry.runtime_data)])
 
 
@@ -50,7 +63,7 @@ class EnergyInsightsStatisticsSensor(
     @override
     def suggested_object_id(self) -> str:
         """Return a stable entity object id independent of UI language."""
-        return "energy_insights_statistics"
+        return "energy_insights_statistik"
 
     @property
     def native_value(self) -> float | None:
@@ -79,6 +92,7 @@ class EnergyInsightsStatisticsSensor(
             "average_price_gross_sek_kwh": data.average_price_gross,
             "average_price_net_sek_kwh": data.average_price_net,
             "average_kwh_per_day": data.average_kwh_per_day,
+            "forecast_month_kwh": data.forecast_month_kwh,
             "highest_day_kwh": data.highest_day_kwh,
             "highest_day_date": data.highest_day_date,
             "lowest_day_kwh": data.lowest_day_kwh,
