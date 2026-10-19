@@ -6,6 +6,7 @@ from typing import override
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import EnergyInsightsConfigEntry
@@ -19,6 +20,18 @@ async def async_setup_entry(
     async_add_entities,
 ) -> None:
     """Set up Energy Insights select entities."""
+    registry = er.async_get(hass)
+    current_entity_id = registry.async_get_entity_id(
+        "select", DOMAIN, PERIOD_SELECT_UNIQUE_ID
+    )
+    target_entity_id = "select.energy_insights_period"
+    if current_entity_id and current_entity_id != target_entity_id:
+        if registry.async_get(target_entity_id) is None:
+            registry.async_update_entity(
+                current_entity_id,
+                new_entity_id=target_entity_id,
+            )
+
     async_add_entities([EnergyInsightsPeriodSelect(entry.runtime_data)])
 
 
