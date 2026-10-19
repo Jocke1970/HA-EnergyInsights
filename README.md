@@ -2,7 +2,7 @@
 
 Home Assistant integration for advanced electricity usage, cost and historical energy insights.
 
-> **Development branch:** `2026.10.1b3`  
+> **Development branch:** `2026.10.1b4`  
 > **Latest stable:** **2026.10.0 / v2026.10.0**
 
 ## Goal
@@ -86,15 +86,13 @@ The Energy Insights card is bundled with the integration and auto-loaded by Home
 
 ```yaml
 type: custom:energy-insights-card
-period_entity: select.period
-statistics_entity: sensor.statistik
 ```
 
 The bundled card uses a responsive premium layout with a consumption hero, stacked gross/net cost rows, collapsible detail accordions for consumption KPIs and Nord Pool records, with a compact consumption summary showing daily average and top power, source/status badges and a high-contrast diagnostic footer with red version emphasis.
 
 Monthly history is integrated into the main Energy Insights card as the final collapsible section. It renders consumption, gross/net cost and weighted average price directly from the Python backend and replaces the legacy monthly `statistics-graph` cards.
 
-The standalone `custom:energy-insights-history-card` remains available for backwards compatibility, but new dashboards should use the main card only.
+The standalone `custom:energy-insights-history-card` remains available for backwards compatibility, but new dashboards should use the main card only. The main card auto-discovers `select.energy_insights_period` and `sensor.energy_insights_statistik`, with fallback support for legacy entity IDs during migration.
 
 ## Next milestone
 
@@ -103,3 +101,8 @@ Runtime-test the bundled card in Home Assistant, then retire the legacy Lovelace
 ## License
 
 MIT
+
+
+### Current-month forecast
+
+For the active month, the consumption hero shows a projected full-month usage based on the average of completed days. The current incomplete day is excluded from the average, so the estimate is not artificially depressed earlier in the day.
