@@ -2,12 +2,9 @@
 #
 # The JavaScript card is bundled with the integration and auto-loaded.
 # No manual Lovelace resource or Mushroom dependency is required.
-#
-# Monthly history is built into the main card as the last accordion.
+# Energy Insights auto-discovers its own period selector and statistics sensor.
 
 type: custom:energy-insights-card
-period_entity: select.period
-statistics_entity: sensor.statistik
 
 # Optional:
 # title: Energy Insights
