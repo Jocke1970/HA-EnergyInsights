@@ -16,8 +16,8 @@ class EnergyInsightsCard extends HTMLElement {
     if (!config) throw new Error("Energy Insights card configuration is required");
     this._config = {
       title: "Energy Insights",
-      period_entity: "select.period",
-      statistics_entity: "sensor.statistik",
+      period_entity: "select.energy_insights_period",
+      statistics_entity: "sensor.energy_insights_statistik",
       show_price_records: true,
       stats_expanded: false,
       price_records_expanded: false,
@@ -44,8 +44,8 @@ class EnergyInsightsCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      period_entity: "select.period",
-      statistics_entity: "sensor.statistik",
+      period_entity: "select.energy_insights_period",
+      statistics_entity: "sensor.energy_insights_statistik",
       show_price_records: true,
       stats_expanded: false,
       price_records_expanded: false,
@@ -62,7 +62,15 @@ class EnergyInsightsCard extends HTMLElement {
   }
 
   _entity(entityId) {
-    return entityId && this._hass?.states ? this._hass.states[entityId] : undefined;
+    if (!entityId || !this._hass?.states) return undefined;
+    const direct = this._hass.states[entityId];
+    if (direct) return direct;
+
+    const fallback = {
+      "sensor.energy_insights_statistik": "sensor.statistik",
+      "select.energy_insights_period": "select.period",
+    }[entityId];
+    return fallback ? this._hass.states[fallback] : undefined;
   }
 
   _stateSignature() {
@@ -425,6 +433,7 @@ class EnergyInsightsCard extends HTMLElement {
     const updated = this._formatUpdated(statsEntity.last_updated);
 
     const energyValue = this._formatNumber(statsEntity.state, 2);
+    const forecastValue = this._number(attrs.forecast_month_kwh);
     const grossCost = this._formatNumber(attrs.cost_gross_sek, 2);
     const netCost = this._formatNumber(attrs.cost_net_sek, 2);
     const grossAvg = this._formatNumber(attrs.average_price_gross_sek_kwh, 3);
@@ -463,8 +472,14 @@ class EnergyInsightsCard extends HTMLElement {
             "energy-hero",
             '<span class="hero-top"><span class="hero-icon"><ha-icon icon="mdi:lightning-bolt"></ha-icon></span><span>Förbrukning</span></span>' +
             '<span class="hero-number">' + this._escape(energyValue) + '<small>kWh</small></span>' +
-            '<span class="hero-meta">' +
-              this._escape(this._formatNumber(attrs.average_kwh_per_day, 2) + " kWh/dag") +
+            '<span class="hero-bottom">' +
+              '<span class="hero-meta">' +
+                this._escape(this._formatNumber(attrs.average_kwh_per_day, 2) + " kWh/dag") +
+              "</span>" +
+              (Number.isFinite(forecastValue)
+                ? '<span class="hero-forecast"><ha-icon icon="mdi:chart-line"></ha-icon><span>Prognos <strong>~' +
+                  this._escape(this._formatNumber(forecastValue, 0)) + ' kWh</strong></span></span>'
+                : "") +
             "</span>"
           ) +
           '<div class="cost-panel">' +
@@ -529,7 +544,7 @@ class EnergyInsightsCard extends HTMLElement {
       '.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--divider-color) 80%,transparent);border-radius:16px;background:color-mix(in srgb,var(--primary-text-color) 2.4%,transparent)}.toolbar-copy{display:flex;align-items:center;gap:10px;min-width:0}.toolbar-copy>ha-icon{color:var(--ei-accent);--mdc-icon-size:20px}.toolbar-copy div{display:grid;gap:1px}.toolbar-copy span{font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:.07em;font-weight:700}.toolbar-copy strong{font-size:13px;font-weight:700;white-space:nowrap}' +
       '.select-wrap{position:relative;min-width:148px;max-width:210px;flex:0 1 210px}.select-wrap select{width:100%;appearance:none;-webkit-appearance:none;padding:9px 34px 9px 12px;border:0;border-radius:11px;outline:none;background:var(--card-background-color);color:var(--primary-text-color);font-weight:720;cursor:pointer;box-shadow:0 1px 0 color-mix(in srgb,var(--primary-text-color) 5%,transparent)}.select-wrap ha-icon{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;--mdc-icon-size:18px;color:var(--secondary-text-color)}' +
 
-      '.overview{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:12px;margin-bottom:16px}.energy-hero,.cost-panel{border-radius:20px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent)}.energy-hero{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:156px;padding:17px;text-align:left;border-color:color-mix(in srgb,var(--ei-accent) 22%,var(--divider-color));background:linear-gradient(150deg,color-mix(in srgb,var(--ei-accent) 14%,var(--card-background-color)),color-mix(in srgb,var(--ei-accent) 3%,var(--card-background-color)));color:var(--primary-text-color);cursor:pointer;transition:transform .16s ease,border-color .16s ease}.energy-hero:hover{border-color:color-mix(in srgb,var(--ei-accent) 52%,var(--divider-color))}.energy-hero:active{transform:scale(.993)}.hero-top{display:flex;align-items:center;gap:8px;color:var(--secondary-text-color);font-size:12px;font-weight:700}.hero-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--ei-accent) 15%,transparent);color:var(--ei-accent)}.hero-icon ha-icon{--mdc-icon-size:19px}.hero-number{display:flex;align-items:baseline;gap:6px;margin:8px 0 2px;font-size:31px;line-height:1;font-weight:800;letter-spacing:-.035em}.hero-number small{font-size:14px;font-weight:700;color:var(--secondary-text-color);letter-spacing:0}.hero-meta{font-size:11px;color:var(--secondary-text-color)}' +
+      '.overview{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:12px;margin-bottom:16px}.energy-hero,.cost-panel{border-radius:20px;border:1px solid color-mix(in srgb,var(--divider-color) 82%,transparent)}.energy-hero{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-height:156px;padding:17px;text-align:left;border-color:color-mix(in srgb,var(--ei-accent) 22%,var(--divider-color));background:linear-gradient(150deg,color-mix(in srgb,var(--ei-accent) 14%,var(--card-background-color)),color-mix(in srgb,var(--ei-accent) 3%,var(--card-background-color)));color:var(--primary-text-color);cursor:pointer;transition:transform .16s ease,border-color .16s ease}.energy-hero:hover{border-color:color-mix(in srgb,var(--ei-accent) 52%,var(--divider-color))}.energy-hero:active{transform:scale(.993)}.hero-top{display:flex;align-items:center;gap:8px;color:var(--secondary-text-color);font-size:12px;font-weight:700}.hero-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--ei-accent) 15%,transparent);color:var(--ei-accent)}.hero-icon ha-icon{--mdc-icon-size:19px}.hero-number{display:flex;align-items:baseline;gap:6px;margin:8px 0 2px;font-size:31px;line-height:1;font-weight:800;letter-spacing:-.035em}.hero-number small{font-size:14px;font-weight:700;color:var(--secondary-text-color);letter-spacing:0}.hero-bottom{display:grid;gap:7px;width:100%}.hero-meta{font-size:11px;color:var(--secondary-text-color)}.hero-forecast{display:inline-flex;align-items:center;gap:5px;width:max-content;padding:5px 7px;border-radius:999px;background:color-mix(in srgb,var(--ei-accent) 9%,transparent);color:var(--secondary-text-color);font-size:9px;font-weight:650}.hero-forecast ha-icon{--mdc-icon-size:13px;color:var(--ei-accent)}.hero-forecast strong{color:var(--primary-text-color);font-weight:800}' +
 
       '.cost-panel{padding:14px;background:color-mix(in srgb,var(--primary-text-color) 2.2%,transparent)}.cost-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 5px}.cost-head>span{font-size:12px;font-weight:760}.cost-head small{color:var(--secondary-text-color);font-size:10px}.cost-grid{display:grid;grid-template-columns:1fr;gap:0}.cost-item{display:flex;align-items:center;gap:10px;min-width:0;padding:11px 4px;border:0;border-radius:0;background:transparent;color:var(--primary-text-color);text-align:left;cursor:pointer;transition:transform .16s ease,background .16s ease}.cost-item+ .cost-item{border-top:1px solid color-mix(in srgb,var(--divider-color) 72%,transparent)}.cost-item:hover{background:color-mix(in srgb,var(--primary-text-color) 2.8%,transparent)}.cost-item:active{transform:scale(.995)}.cost-icon{width:32px;height:32px;display:grid;place-items:center;flex:0 0 32px;border-radius:10px;background:color-mix(in srgb,var(--ei-accent) 11%,transparent);color:var(--ei-accent)}.cost-item.net .cost-icon{background:color-mix(in srgb,var(--ei-success) 11%,transparent);color:var(--ei-success)}.cost-icon ha-icon{--mdc-icon-size:18px}.cost-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"label avg" "value avg";align-items:center;column-gap:12px;row-gap:2px;min-width:0;width:100%}.cost-copy>span{grid-area:label;font-size:10px;color:color-mix(in srgb,var(--primary-text-color) 82%,transparent);font-weight:700}.cost-copy strong{grid-area:value;font-size:18px;line-height:1.05;white-space:nowrap;letter-spacing:-.02em}.cost-copy strong small{font-size:11px;font-weight:700}.cost-copy em{grid-area:avg;align-self:center;font-style:normal;font-size:10px;font-weight:650;color:var(--secondary-text-color);white-space:nowrap;text-align:right}' +
 
@@ -559,7 +574,7 @@ class EnergyInsightsHistoryCard extends HTMLElement {
 
   setConfig(config) {
     this._config = {
-      statistics_entity: "sensor.statistik",
+      statistics_entity: "sensor.energy_insights_statistik",
       title: "Månadshistorik",
       embedded: false,
       ...config,
@@ -570,7 +585,8 @@ class EnergyInsightsHistoryCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    const entity = hass?.states?.[this._config?.statistics_entity];
+    const entity = hass?.states?.[this._config?.statistics_entity] ||
+      hass?.states?.["sensor.statistik"];
     const rows = entity?.attributes?.monthly_history || [];
     const next = [entity?.last_updated, JSON.stringify(rows)].join("|");
     if (next !== this._signature) {
@@ -717,7 +733,8 @@ class EnergyInsightsHistoryCard extends HTMLElement {
 
   _render() {
     if (!this.shadowRoot || !this._config) return;
-    const entity = this._hass?.states?.[this._config.statistics_entity];
+    const entity = this._hass?.states?.[this._config.statistics_entity] ||
+      this._hass?.states?.["sensor.statistik"];
     const rows = Array.isArray(entity?.attributes?.monthly_history)
       ? entity.attributes.monthly_history
       : [];
