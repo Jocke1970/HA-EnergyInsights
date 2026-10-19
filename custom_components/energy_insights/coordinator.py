@@ -96,6 +96,7 @@ class EnergyInsightsData:
     average_price_gross: float | None
     average_price_net: float | None
     average_kwh_per_day: float | None
+    forecast_month_kwh: float | None
     highest_day_kwh: float | None
     highest_day_date: str | None
     lowest_day_kwh: float | None
@@ -1042,6 +1043,15 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             current_month_cost_net,
         )
 
+        forecast_month_kwh: float | None = None
+        if is_current_month and average_day is not None:
+            if now.month == 12:
+                next_month = datetime(now.year + 1, 1, 1, tzinfo=tz)
+            else:
+                next_month = datetime(now.year, now.month + 1, 1, tzinfo=tz)
+            days_in_month = (next_month.date() - month_start_local.date()).days
+            forecast_month_kwh = average_day * days_in_month
+
         average_price_gross = (
             cost_gross / energy if cost_gross is not None and energy > 0 else None
         )
@@ -1068,6 +1078,11 @@ class EnergyInsightsCoordinator(DataUpdateCoordinator[EnergyInsightsData]):
             ),
             average_kwh_per_day=(
                 round(average_day, 2) if average_day is not None else None
+            ),
+            forecast_month_kwh=(
+                round(forecast_month_kwh, 1)
+                if forecast_month_kwh is not None
+                else None
             ),
             highest_day_kwh=(
                 round(highest_day, 2) if highest_day is not None else None
